@@ -1,0 +1,167 @@
+##########################################################################
+########## storm
+##########################################################################
+
+#编程模型
+Datasource: 外部数据源，一个Strom可以有多个数据源
+Spout   接收外部数据源的组件，将外部数据源转化成Storm内部的数据，以Tuple为基本的传输单元 下发给Bolt
+Bolt    业务逻辑处理节点，可以有多个，接收Spout发送的数据，或上游bolt发送的数据。根据业务逻辑进行处理，发送给下一个bolt或存储到某种介质上。介质可以是redis和mysql
+Tuple   Storm内部中数据传输的基本单元，是一个Tuple对象，对象有个list用来保存数据。
+StreamGroup   数据分组策略，hadoop中的hashcode % num，轮询、权重、指定、随机分组
+              7种：shuffleGrouping(random),Non Grouping(Random),FieldGrouping(Hash取模，同样的userid射到同一个task中)，Local or ShuffleGrouping本地或随机，优先本地
+
+#并发度
+用户指定的一个任务，可以被多个线程执行，并发度的数量等于线程的数量。一个任务的多个线程，会被运行在多个Worker(JVM)上。
+有一种类似于平均算法的负载均衡策略，尽可能减少网络IO。与MapReduces的本地运算道理相同(尽量运行在数据节点本地机器上)。
+
+
+#架构
+Nimbus：任务分配
+Supervisor：接收任务并启动worker，worker的数量根据端口号来的。
+Worker：执行任务的具体组件，其实就是一个JVM，可以执行两种类型的任务，Spout任务或bolt任务。
+Task：Task=线程=executor。一个属于一个spout或Bolt并发任务。
+Zookeeper：保存任务分配信息和心跳信息，元数据信息
+
+#worker与topology
+一个worker只属于一个topology，反之，一个topology包含多个worker，其实就是这个topology运行在多个worker上，每个worker中运行的task只能属于这个topology。
+一个topology要求的worker数量如果不被满足，集群在任务分配时，根据现有的worker先运行topology。如果当前集群中worker数量为0，那么最新提交的topology将会被标识为active，不会运行，只有当集群有了空闲资源后，才会运行。
+
+##### 自己的理解：
+topology相当于hadoop里的MapReduces。Storm程序就叫 Topology。一个Topology的数据是自己独有的，和其他的Topology没啥关系。
+说白了，topology就是用来执行我们写的storm程序代码的。
+默认情况下：executor数 = thread数 = task数
+
+
+#概念
+Rebalance  把hadoop集群各个机器上的数据进行均匀分布操作，如原有100台机器，数据都在那些上，新上100台，那100台没东西，不均匀，执行此操作，会把东西拿点到100台新机器上。
+           把storm里的worker任务进行均匀分布。
+
+#如何指定驱动类中每个组件的并发度数量？也就是wordcount里那几个数字2，4，2
+1、根据上游的数据量来设置Spout的并发度
+2、根据业务复杂度和execute方法执行时间来设置Bolt并发度
+3、根据集群的可用资源来配置，一般情况下70%的资源使用率。
+4、worker的数量根据程序并发度总的Task数量来均分。在实际业务场景中，需反复调整。
+
+
+
+############## 环境搭建：
+压缩包：apache-storm-0.9.5.tar.gz
+
+# 实时计算的目录都在 /export/servers里。离线计算是在/home/hadoop/apps里
+su - root
+mkdir -p /export/servers
+chown -R hadoop:hadoop /export
+su - hadoop
+
+mkdir -p /export/logs
+cd /home/hadoop
+tar -vxzf soft/apache-storm-0.9.5.tar.gz -C /export/servers/
+cd /export/servers/
+ln -s apache-storm-0.9.5 storm
+
+#修改配置文件
+mv /export/servers/storm/conf/storm.yaml /export/servers/storm/conf/storm.yaml.bak
+touch /export/servers/storm/conf/storm.yaml
+# 修改配置文件storm.yaml
+cat >> /export/servers/storm/conf/storm.yaml << EOF
+#指定storm使用的zk集群
+storm.zookeeper.servers:
+     - "s1"
+     - "s2"
+#指定storm本地状态保存地址
+storm.local.dir: "/export/data/storm/workdir"
+#指定storm集群中的nimbus节点所在的服务器
+nimbus.host: "s1"
+#指定nimbus启动JVM最大可用内存大小
+nimbus.childopts: "-Xmx1024m"
+#指定supervisor启动JVM最大可用内存大小
+supervisor.childopts: "-Xmx1024m"
+#指定supervisor节点上，每个worker启动JVM最大可用内存大小
+worker.childopts: "-Xmx768m"
+#指定ui启动JVM最大可用内存大小，ui服务一般与nimbus同在一个节点上。
+ui.childopts: "-Xmx768m"
+#指定supervisor节点上，启动worker时对应的端口号，每个端口对应槽，每个槽位对应一个worker
+supervisor.slots.ports:
+    - 6700
+    - 6701
+    - 6702
+    - 6703
+EOF
+
+######分发安装包
+scp -r /export/servers/apache-storm-0.9.5 s2:/export/servers
+
+#在其他机器上建立软链接
+cd /export/servers/
+ln -s apache-storm-0.9.5 storm
+mkdir -p /export/logs
+
+##### 启动集群(主机器s1)
+/export/servers/storm/bin/storm nimbus &
+/export/servers/storm/bin/storm ui &
+# 其他机器
+/export/servers/storm/bin/storm supervisor &
+
+###### 查看集群
+http://s1:8080
+或者jps查看：
+主上会多  24274 nimbus
+从(s2机器)上会多这个    18696 supervisor
+
+######  写代码执行
+本地写代码，可以本地调度，也可以放到集群上。放到集群上是这样的流程：
+本地代码打成jar包。传上去。执行：
+/export/servers/storm/bin/storm jar /export/servers/bigdata.jar cn.jhsoft.bigdata.storm.wordcount.WordCountTopologMain
+
+
+
+
+
+
+
+#########################################################################
+########## kafaka
+##########################################################################
+
+数据生产者 messageProducer
+数据消费者 messagetConsumer
+数据保存的进程 broker(经济人)，每台服务器上都有独立的broker进程。
+数据目的地(分类，主题)  destination,topic
+数据分片   partition 有多个有副本
+kafaka每秒可以写600M写到硬盘上
+如何保证消息全局有序？
+消费者负载均衡策略？
+kafaka如何标记消费状态？
+kafaka有什么独特的特点？
+
+##### 安装
+cd /home/hadoop/soft
+wget http://mirrors.hust.edu.cn/apache/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz
+cd ../
+tar -zxvf /soft/kafka_2.11-0.8.2.2.tgz -C /export/servers/
+cd /export/servers/
+ln -s kafka_2.11-0.8.2.2 kafka
+
+cp /export/servers/kafka/config/server.properties /export/servers/kafka/config/server.properties.bak
+vi /export/servers/kafka/config/server.properties
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

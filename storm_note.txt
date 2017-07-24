@@ -121,7 +121,7 @@ http://s1:8080
 
 
 #########################################################################
-########## kafaka
+########## kafka
 ##########################################################################
 
 数据生产者 messageProducer
@@ -224,7 +224,24 @@ source /etc/profile
 
 
 
+###########################################################################################################
+####################### 项目：双11，实时计算金额、销量等
+###########################################################################################################
 
+一、修改flume配置文件，让他通过log去到kafka中。
+配置文件在 本项目 shell/flume_conf/exe2kafka.conf。复制到/home/hadoop/apps/flume/conf 这个目录中
+#创建日志目录
+mkdir -p /export/data/flume_sources/log
+#启动flume
+/home/hadoop/apps/flume/bin/flume-ng agent --conf /home/hadoop/apps/flume/conf --conf-file /home/hadoop/apps/flume/conf/exe2kafka.conf --name a1 -Dflume.root.logger=INFO,console &
+
+生产日志
+vi click_log_out.sh
+for((i=0;i<=50000;i++));
+do echo "message-"+$i >>/export/data/flume_source/log/1.log;
+done
+
+二、启动zk，kafka
 
 
 

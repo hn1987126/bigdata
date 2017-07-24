@@ -45,15 +45,16 @@ Rebalance  把hadoop集群各个机器上的数据进行均匀分布操作，如
 
 
 ############## 环境搭建：
-压缩包：apache-storm-0.9.5.tar.gz
+压缩包：apache-storm-0.9.5.tar.gz (下载地址https://archive.apache.org/dist/storm/apache-storm-0.9.5/apache-storm-0.9.5.tar.gz)
 
 # 实时计算的目录都在 /export/servers里。离线计算是在/home/hadoop/apps里
 su - root
 mkdir -p /export/servers
+mkdir -p /export/logs
 chown -R hadoop:hadoop /export
 su - hadoop
 
-mkdir -p /export/logs
+
 cd /home/hadoop
 tar -vxzf soft/apache-storm-0.9.5.tar.gz -C /export/servers/
 cd /export/servers/
@@ -88,7 +89,7 @@ supervisor.slots.ports:
     - 6703
 EOF
 
-######分发安装包
+######分发安装包 (分发之前需要在其他机器上建/export目录)
 scp -r /export/servers/apache-storm-0.9.5 s2:/export/servers
 
 #在其他机器上建立软链接
@@ -97,10 +98,10 @@ ln -s apache-storm-0.9.5 storm
 mkdir -p /export/logs
 
 ##### 启动集群(主机器s1)
-/export/servers/storm/bin/storm nimbus &
-/export/servers/storm/bin/storm ui &
+nohup /export/servers/storm/bin/storm nimbus >/dev/null 2>&1 &
+nohup /export/servers/storm/bin/storm ui >/dev/null 2>&1 &
 # 其他机器
-/export/servers/storm/bin/storm supervisor &
+nohup /export/servers/storm/bin/storm supervisor >/dev/null 2>&1 &
 
 ###### 查看集群
 http://s1:8080
@@ -128,30 +129,98 @@ http://s1:8080
 数据保存的进程 broker(经济人)，每台服务器上都有独立的broker进程。
 数据目的地(分类，主题)  destination,topic
 数据分片   partition 有多个有副本
-kafaka每秒可以写600M写到硬盘上
+kafka每秒可以写600M写到硬盘上
 如何保证消息全局有序？
 消费者负载均衡策略？
-kafaka如何标记消费状态？
-kafaka有什么独特的特点？
+kafka如何标记消费状态？
+kafka有什么独特的特点？
+kafka为什么快？
+因为是存在内存中，通过pagecache机制。硬盘上的通过sendfile(sendfile:Linux中的"零拷贝")
 
 ##### 安装
 cd /home/hadoop/soft
 wget http://mirrors.hust.edu.cn/apache/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz
-cd ../
-tar -zxvf /soft/kafka_2.11-0.8.2.2.tgz -C /export/servers/
+tar -zxvf /home/hadoop/soft/kafka_2.11-0.8.2.2.tgz -C /export/servers/
 cd /export/servers/
 ln -s kafka_2.11-0.8.2.2 kafka
+mkdir -p /export/servers/logs
 
+#### 配置文件
 cp /export/servers/kafka/config/server.properties /export/servers/kafka/config/server.properties.bak
-vi /export/servers/kafka/config/server.properties
+cat > /export/servers/kafka/config/server.properties << EOF
+#broker的全局唯一编号，不能重复
+broker.id=0
+#用来监听连接的端口，producer或consumer将在此端口建立连接
+port=9092
+#处理网络请求的线程数量
+num.network.threads=3
+#用来处理磁盘IO的现成数量
+num.io.threads=8
+#发送套接字的缓冲区大小
+socket.send.buffer.bytes=102400
+#接受套接字的缓冲区大小
+socket.receive.buffer.bytes=102400
+#请求套接字的缓冲区大小
+socket.request.max.bytes=104857600
+#kafka运行日志存放的路径
+log.dirs=/export/servers/logs/kafka
+#topic在当前broker上的分片个数
+num.partitions=2
+#用来恢复和清理data下数据的线程数量
+num.recovery.threads.per.data.dir=1
+#segment文件保留的最长时间，超时将被删除，7天
+log.retention.hours=168
+#滚动生成新的segment文件的最大时间
+log.roll.hours=168
+#zookeeper
+zookeeper.connect=s1:2181,s2:2181,s3:2181
+zookeeper.connection.timeout.ms=6000
+EOF
+
+#### 分发安装包
+scp -r /export/servers/kafka_2.11-0.8.2.2 s2:/export/servers
+#在别的机器上建立软链接和修改别的机器的配置文件
+cd /export/servers/
+ln -s kafka_2.11-0.8.2.2 kafka
+mkdir -p /export/servers/logs
+#修改别的机器的 broker.id，分别为0，1，2，3等
+sed -i "/^broker.id=/c\broker.id=1" /export/servers/kafka/config/server.properties
+#启动本机和目标机器上的kafka服务
+nohup /export/servers/kafka/bin/kafka-server-start.sh  /export/servers/kafka/config/server.properties >/dev/null 2>&1 &
+
+###此时可以用jps看，是否有Kafka 这个。
+
+#### kafka常用命令：
+#查看当前服务器中的所有topic
+/export/servers/kafka/bin/kafka-topics.sh --list --zookeeper s1:2181
+#新建主题topic  [partitions是分区，topic 后面的是主题名字，replication-factor是备份的备份数]
+/export/servers/kafka/bin/kafka-topics.sh --create --zookeeper s1:2181 --replication-factor 2 --partitions 4 --topic orderMQ
+#删除主题
+/export/servers/kafka/bin/kafka-topics.sh --delete --zookeeper s1:2181 --topic orderMQ
+#配置下环境变量
+#通过shell命令发送消息
+kafka-console-producer.sh --broker-list s1:9092 --topic orderMQ
+#通过shell消费消息
+kafka-console-consumer.sh --zookeeper s2:2181 --from-beginning --topic orderMQ
+#查看消费位置
+kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --zookeeper s1:2181 --group orderMQ
+#查看某个Topic的详情
+kafka-topics.sh --topic orderMQ --describe --zookeeper s1:2181
 
 
+########################################################################
+################## 配置环境变量：
+########################################################################
+su - root
+vi /etc/profile
+export KAFKA_HOME=/export/servers/kafka
+export PATH=$PATH:$KAFKA_HOME/bin
+source /etc/profile
 
+su - hadoop
+source /etc/profile
 
-
-
-
-
+这样后就可以 直接执行 kafka-console-producer.sh xxx 这个了。
 
 
 

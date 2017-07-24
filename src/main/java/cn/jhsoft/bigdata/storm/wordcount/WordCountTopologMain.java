@@ -1,6 +1,7 @@
 package cn.jhsoft.bigdata.storm.wordcount;
 
 import backtype.storm.Config;
+import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.topology.TopologyBuilder;
 import backtype.storm.tuple.Fields;
@@ -23,10 +24,10 @@ public class WordCountTopologMain {
 
         // 提交任务
         // 模式1：集群模式
-        StormSubmitter.submitTopology("mywordcount", config, topologyBuilder.createTopology());
+        //StormSubmitter.submitTopology("mywordcount", config, topologyBuilder.createTopology());
         // 模式2：本地模式
-        //LocalCluster localCluster = new LocalCluster();
-        //localCluster.submitTopology("mywordcount", config, topologyBuilder.createTopology());
+        LocalCluster localCluster = new LocalCluster();
+        localCluster.submitTopology("mywordcount", config, topologyBuilder.createTopology());
 
     }
 

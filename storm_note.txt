@@ -107,7 +107,7 @@ nohup /export/servers/storm/bin/storm supervisor >/dev/null 2>&1 &
 http://s1:8080
 或者jps查看：
 主上会多  24274 nimbus
-从(s2机器)上会多这个    18696 supervisor
+从(s2机器)上会多这个    18696 supervisor   (起的过程中查看jps的话，是出现config_value，启完了会变成supervisor)
 
 ######  写代码执行
 本地写代码，可以本地调度，也可以放到集群上。放到集群上是这样的流程：
@@ -215,6 +215,8 @@ su - root
 vi /etc/profile
 export KAFKA_HOME=/export/servers/kafka
 export PATH=$PATH:$KAFKA_HOME/bin
+
+s
 source /etc/profile
 
 su - hadoop
@@ -228,20 +230,24 @@ source /etc/profile
 ####################### 项目：双11，实时计算金额、销量等
 ###########################################################################################################
 
-一、修改flume配置文件，让他通过log去到kafka中。
+一、模拟生产过程：
+
+#修改flume配置文件，让他通过log去到kafka中。
 配置文件在 本项目 shell/flume_conf/exe2kafka.conf。复制到/home/hadoop/apps/flume/conf 这个目录中
 #创建日志目录
 mkdir -p /export/data/flume_sources/log
 #启动flume
-/home/hadoop/apps/flume/bin/flume-ng agent --conf /home/hadoop/apps/flume/conf --conf-file /home/hadoop/apps/flume/conf/exe2kafka.conf --name a1 -Dflume.root.logger=INFO,console &
+/home/hadoop/apps/flume/bin/flume-ng agent --conf /home/hadoop/apps/flume/conf --conf-file /home/hadoop/apps/flume/conf/exe2kafka.conf --name a1 &
 
-生产日志
-vi click_log_out.sh
-for((i=0;i<=50000;i++));
-do echo "message-"+$i >>/export/data/flume_source/log/1.log;
-done
+#生产日志的shell
+执行生产日志的文件    把这拷到服务器执行   shell/flume_conf/createlog.sh
+这个shell脚本里会往 /export/data/flume_sources/log 这目录下生成数据。
+flume里会感应到，因为他是监控 tail -f  shell生成的日志文件。往kafka生产数据
 
-二、启动zk，kafka
+#消费
+kafka就能通过 kafka-console-consumer.sh --zookeeper s2:2181 --from-beginning --topic orderMq  消费了。
+
+
 
 
 

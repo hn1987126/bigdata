@@ -22,13 +22,13 @@ public class WordCountTopologMain {
         Config config = new Config();
         config.setNumWorkers(2);
 
-        // 提交任务
-        // 模式1：集群模式
-        //StormSubmitter.submitTopology("mywordcount", config, topologyBuilder.createTopology());
-        // 模式2：本地模式
-        LocalCluster localCluster = new LocalCluster();
-        localCluster.submitTopology("mywordcount", config, topologyBuilder.createTopology());
-
+        //3、提交任务  -----两种模式 本地模式和集群模式
+        if (args.length>0) {
+            StormSubmitter.submitTopology(args[0], config, topologyBuilder.createTopology());
+        }else {
+            LocalCluster localCluster = new LocalCluster();
+            localCluster.submitTopology("mywordcount", config, topologyBuilder.createTopology());
+        }
     }
 
 }

@@ -4,6 +4,11 @@
 ##### 快速把一个javaBean转为json
 com.google.gson.Gson
 
+##### 设置开机启动
+vi /etc/rc.local 在里面加上命令即可
+
+
+
 ##########################################################################
 ########## storm
 ##########################################################################
@@ -278,8 +283,9 @@ cd src
 make install
 mkdir -p /usr/local/redis/bin
 mkdir -p /usr/local/redis/etc
-cp /home/hadoop/soft/redis-3.2.9/redis.conf /usr/local/redis/etc
+cp ../redis.conf /usr/local/redis/etc
 cp redis-benchmark redis-check-aof redis-cli redis-server /usr/local/redis/bin
+#是否在后台执行，yes：后台运行；no：不是后台运行（老版本默认）
 sed -i "/^daemonize no/c\daemonize yes" /usr/local/redis/etc/redis.conf
 sed -i "/^# requirepass foobared/c\requirepass 123456" /usr/local/redis/etc/redis.conf
 sed -i "/^bind 127.0.0.1/c\#bind 127.0.0.1" /usr/local/redis/etc/redis.conf

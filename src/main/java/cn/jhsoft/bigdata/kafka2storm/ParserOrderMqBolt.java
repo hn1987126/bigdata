@@ -35,7 +35,7 @@ public class ParserOrderMqBolt extends BaseRichBolt {
          *如果你遇到 java.net.SocketTimeoutException: Read timed out exception的异常信息
          *请尝试在构造JedisPool的时候设置自己的超时值. JedisPool默认的超时时间是2秒(单位毫秒)
          */
-        pool = new JedisPool(config, "s1", 6379);
+        pool = new JedisPool(config, "s1", 6379, 1000, "123456");
     }
 
     @Override

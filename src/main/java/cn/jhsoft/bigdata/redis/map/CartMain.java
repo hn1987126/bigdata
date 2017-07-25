@@ -12,14 +12,14 @@ import java.util.Set;
 /**
  * Describe: 购物车
  */
-public class Cart {
+public class CartMain {
     private Jedis jedis;
 
-    public Cart() {
+    public CartMain() {
         jedis = new Jedis("127.0.0.1", 6379);
     }
 
-    public Cart(Jedis jedis) {
+    public CartMain(Jedis jedis) {
         this.jedis = jedis;
     }
 
@@ -71,7 +71,7 @@ public class Cart {
         //初始化商品的信息
         initData();
         //创建购物车对象
-        Cart cart = new Cart();
+        CartMain cart = new CartMain();
         //创建用户
         String userName = "liudehua";
         //往用户购物车中添加商品

@@ -19,7 +19,7 @@ public class OrderMqSender {
         props.put("request.required.acks", "1");
         props.put("partitioner.class", "kafka.producer.DefaultPartitioner");
         Producer<String, String> producer = new Producer<String, String>(new ProducerConfig(props));
-        for (int messageNo = 1; messageNo < 100000; messageNo++) {
+        for (int messageNo = 1; messageNo < 10; messageNo++) {
             producer.send(new KeyedMessage<String, String>(TOPIC, messageNo + "",new OrderInfo().random() ));
 //            try {
 //                Thread.sleep(100);

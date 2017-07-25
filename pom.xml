@@ -15,7 +15,7 @@
             <artifactId>storm-core</artifactId>
             <version>0.9.5</version>
             <!--在本地运行时要注释掉，上线的时候要打开，他是指打jar包时排除出来-->
-            <scope>provided</scope>
+            <!--<scope>provided</scope>-->
         </dependency>
 
         <dependency>

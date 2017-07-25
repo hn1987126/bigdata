@@ -237,15 +237,15 @@ source /etc/profile
 #创建日志目录
 mkdir -p /export/data/flume_sources/log
 #启动flume
-/home/hadoop/apps/flume/bin/flume-ng agent --conf /home/hadoop/apps/flume/conf --conf-file /home/hadoop/apps/flume/conf/exe2kafka.conf --name a1 &
+/home/hadoop/apps/flume/bin/flume-ng agent --conf /home/hadoop/apps/flume/conf --conf-file /home/hadoop/apps/flume/conf/myconf/exe2kafka.conf --name a1 &
 
 #生产日志的shell
 执行生产日志的文件    把这拷到服务器执行   shell/flume_conf/createlog.sh
 这个shell脚本里会往 /export/data/flume_sources/log 这目录下生成数据。
 flume里会感应到，因为他是监控 tail -f  shell生成的日志文件。往kafka生产数据
 
-#消费
-kafka就能通过 kafka-console-consumer.sh --zookeeper s2:2181 --from-beginning --topic orderMq  消费了。
+#消费 可以在s2机器上
+kafka-console-consumer.sh --zookeeper s2:2181 --from-beginning --topic orderMq
 
 
 

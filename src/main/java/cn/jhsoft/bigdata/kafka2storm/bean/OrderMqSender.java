@@ -8,7 +8,7 @@ import java.util.Properties;
 import java.util.UUID;
 
 /**
- * Created by maoxiangyi on 2016/5/4.
+ * 生产 订单数据的
  */
 public class OrderMqSender {
     public static void main(String[] args) {

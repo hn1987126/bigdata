@@ -1,4 +1,10 @@
 ##########################################################################
+########## 知识技术
+##########################################################################
+##### 快速把一个javaBean转为json
+com.google.gson.Gson
+
+##########################################################################
 ########## storm
 ##########################################################################
 
@@ -216,7 +222,15 @@ vi /etc/profile
 export KAFKA_HOME=/export/servers/kafka
 export PATH=$PATH:$KAFKA_HOME/bin
 
-s
+export STORM_HOME=/export/servers/storm
+export PATH=$PATH:$STORM_HOME/bin
+
+export ZK_HOME=/home/hadoop/apps/zookeeper-3.4.5
+export PATH=$PATH:$ZK_HOME/bin
+
+export HIVE_HOME=/home/hadoop/apps/hive
+export PATH=$PATH:$HIVE_HOME/bin
+
 source /etc/profile
 
 su - hadoop
@@ -247,9 +261,47 @@ flume里会感应到，因为他是监控 tail -f  shell生成的日志文件。
 #消费 可以在s2机器上
 kafka-console-consumer.sh --zookeeper s2:2181 --from-beginning --topic orderMq
 
+二、程序实现 storm读取和处理kafka里的数据：
+程序在kafka2storm中，这需要maven引入 org.apache.kafka 这个包
+注意有个坑，当打包到集群中执行时，如提示log4j此类的错误，是因为各个包引入的log4j有冲突，需要<exclusions>排除一下。
+org.apache.storm包里也需要加上<scope>provided</scope>，代表不要把这个打包上去，因为服务器集群环境里已经有。
 
 
+###### 安装redis
+su - root    切换到root帐号
 
+cd /home/hadoop/soft
+tar -vxzf redis-3.2.9.tar.gz
+cd redis-3.2.9
+make
+cd src
+make install
+mkdir -p /usr/local/redis/bin
+mkdir -p /usr/local/redis/etc
+cp /home/hadoop/soft/redis-3.2.9/redis.conf /usr/local/redis/etc
+cp redis-benchmark redis-check-aof redis-cli redis-server /usr/local/redis/bin
+sed -i "/^daemonize no/c\daemonize yes" /usr/local/redis/etc/redis.conf
+sed -i "/^# requirepass foobared/c\requirepass 123456" /usr/local/redis/etc/redis.conf
+sed -i "/^bind 127.0.0.1/c\#bind 127.0.0.1" /usr/local/redis/etc/redis.conf
+
+
+#启动
+/usr/local/bin/redis-server /usr/local/redis/etc/redis.conf
+
+#服务器上用客户端来连接
+redis-cli -a 123456 -h 127.0.0.1 -p 6379    (后面的-h和-p都可以省掉)。
+输入 ping 看响应的是不是 Pong ,如果是Pong才代表通了。
+如果java在操作redis时，出现这样的错误：
+(error) MISCONF Redis is configured to save RDB snapshots, but is currently not able to persist on disk.
+则在redis-cli里执行下面这句话：即可
+config set stop-writes-on-bgsave-error no
+
+#持久化配置，默认是不持久化，如果需要配置，修改 /usr/local/redis/etc/redis.conf 文件，
+将   appendonly no   中的no改为yes，默认是no
+将   appendfsync everysec    按自己的要求来配，具体appendfsync后面的参数是啥意思，下面列出来了
+always 收到命令就立即写入磁盘，性能差，完全持久化。
+everysec  每秒强制写入磁盘一次，推荐使用，在性能和持久化上作了折中
+no  完全依赖os，性能最好，持久化没保证
 
 
 

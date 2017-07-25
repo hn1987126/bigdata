@@ -9,9 +9,7 @@ import backtype.storm.tuple.Tuple;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by maoxiangyi on 2016/5/4.
- */
+
 public class MyKafkaBolt extends BaseRichBolt {
     OutputCollector collector;
     @Override

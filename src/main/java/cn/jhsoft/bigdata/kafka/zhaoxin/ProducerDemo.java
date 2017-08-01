@@ -15,7 +15,7 @@ public class ProducerDemo {
 		props.put("serializer.class", "kafka.serializer.StringEncoder");
 		ProducerConfig config = new ProducerConfig(props);
 		Producer<String, String> producer = new Producer<String, String>(config);
-		for (int i = 1001; i <= 1100; i++)
-			producer.send(new KeyedMessage<String, String>("jhsoft", "it " + i));
+		for (int i = 1001; i <= 1010; i++)
+			producer.send(new KeyedMessage<String, String>("jhsoft", "it" + i));
 	}
 }

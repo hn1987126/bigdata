@@ -44,8 +44,10 @@ public class KafkaConsumerSimple implements Runnable {
 
     public static void main(String[] args) throws Exception{
         Properties props = new Properties();
+		// 组的概念是，如一批数据，部门1也要消费，部门2也要消费，所以部门1消费完，对他这数据就清了，部门2还没消费，对部门2来说还是新数据。
         props.put("group.id", "dashujujiagoushi");
         props.put("zookeeper.connect", "s1:2181,s2:2181");
+		// 还可以是smallest 代表从头开始消费，largest是启动之后的数据才消费
         props.put("auto.offset.reset", "largest");
         props.put("auto.commit.interval.ms", "1000");
         props.put("partition.assignment.strategy", "roundrobin");

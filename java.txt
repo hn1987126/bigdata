@@ -52,11 +52,194 @@ CPU的执行权     正在被cpu处理。
 临时阻塞状态     具备执行资格，但是不具备执行权，正在等待执行权，是临时阻塞。他和运行状态，两者不断的切换。
 ->如A,B,C,D4个线程同时执行，当cpu正在执行A的时候，bcd是临时阻塞状态。
 
-wait()   等待   需要靠 notify() 唤醒，他才能重新争夺执行权和执行资格
 sleep(1000)   等待，1秒后又重新有了执行权和执行资格。
+
+------ 等待唤醒机制
+wait()   等待   需要靠 notify() 唤醒，他才能重新争夺执行权和执行资格。让线程处于冻结状态，被wait的线程会被存储到线程池中。
+notify() 唤醒同锁线程池中的一个线程(任意)
+notifyAll() 唤醒同锁线程池中的所有线程，让他们具有被cpu执行的资格
+以上这三个方法必须定义在同步中。因为这些方法是用于操作线程状态的方法。必须要明确到底操作的是哪个锁上的线程。
+操作这三个方法，前面需要加上锁名.，也就是锁那个对象，如，obj.wait()
 
 栈内存  main方法执行，里面调了a方法，b方法，那main先入栈，a再入栈，执行完a后，a出栈，b再入栈，b执行完了b出栈，main再出栈。如果出异常，则立即出栈。
 堆内存  如成员变量。
 
 ##异常会包含4部分信息：
 线程，异常类型，异常信息，在什么位置。
+
+线程安全问题产生的原因：
+1、多个线程在操作共享的数据。
+2、操作共享数据的线程代码有多条。
+当一个线程在执行操作共享数据的多条代码过程中，其他线程参与了运算。就会导致线程安全问题的产生。
+因为可能有多条语句，执行完其中一条，那cpu就可能切走了，在没有减之前，别的线程就进来了。
+解决思路：
+将多条操作共享数据的线程代码封装起来，当有线程在执行这些代码的时候，其他线程不可以进来。
+解决办法：
+一、同步代码块
+synchronized(对象){  // 这个对象就直接用this就行
+    需要被同步的代码，也就是不安全操作的那几条代码
+}
+同步的好处：解决线程安全问题
+弊端：相对降低了效率。因为同步外的线程都会不停的判断同步锁。
+同步的前提：必须有多个线程，并他们使用同一个锁。
+
+二、同步函数：里面的锁对象是 this
+与同步代码块一样，只不过刚好需要同步的代码就在一个函数中，就省得再多写 synchronized(对象){}，只需要在函数前面加个修饰符
+public synchronized void funcA() {}
+
+三、静态同步函数  里面的锁对象是 ：  this.getClass()、类名.class
+该函数所属的字节码文件对象  是  类名.class(class是属性，任何类都有)，或对象.getClass()，(这个类的任意的对象)
+## 字节码文件对象，也就是静态类，静态方法，等他们一开始加载到内存时，他们所在的对象，也就是类本身：
+Class clazz = Object.class;(类名.class)    或  Class clazz = t.getClass()  对象.getClass() 【用对象去获取(t是new出来的对象)，或者 this.getClass();】
+在静态方法里，如果要加同步代码块，那对象只能是 类名.class这种形式。因为那会还没有this，也没有obj
+
+单例模式有两种形式，一种是饿汉式的，一种是懒汉式的。饿汉式是在类加载到内存时，便把对象new出来了，getInstance方法中只是返回，这不会出现多线程安全问题。
+懒汉式是，类加载时不new对象，在getInstance方法中判断如果为null再new，这时就因为这一个判断，是多条语句，就产生了安全问题。需要加同步代码块锁来解决。
+
+死锁：是指同步块嵌套同步块，或同步函数里有同步块，这种我拿着我的锁不放，你拿着你的锁不放，导致我执行不到你的代码块，你执行不了我的代码块。程序就僵持在那里。
+
+### 线程间通信：
+多个线程在处理同一资源，但是任务却不同。举例：火车把煤运来了，汽车要把煤拉走。他们是不同的任务，不同的线程，但是资源是同一个。
+
+### 锁对象Lock
+ * Lock接口  代替了synchronized
+ * condition接口   代替了object锁名
+ * jdk1.5之后，把同步代码块，这种隐式锁，替换成了Lock对象，将隐式动作变成了显式动作(封装到lock对象的方法中了)
+ 可以一个锁上加多个监视器。
+ lockObj.lock()  获取锁
+ lockObj.unlock()   释放锁，通常需要定义在finally代码块中
+
+ Condition接口【监视器】：替代了Object中的wait notify notifyAll方法。
+ 将这些监视器方法单独进行了封装，变成Condition监视器对象。可以和任意锁进行组合。
+
+ 中止线程：interrupt()
+ 它是将线程从冻结状态强制恢复到运行状态中来，使线程具备cpu的执行资格。
+ 当强制动作发生了InterruptedException，记得要处理。
+
+ 守护线程或用户线程、联合进程：   setDaemon(true),在启动线程之前调用。
+ 它也叫 后台进程。只要前台进程都结束了，后台进程也就结束了。前台进程就是没加这个的那些进程。
+ 举例：你负责输入，我负责输出，你不输入我就不输出，你要是结束了，我也就结束了。我是后台进程。用在这里。
+
+ join方法。临时加入一个线程运算，其他的线程要等这个线程运算完才能算。
+ 如  thread1.join()  这个方法的名字叫，"等待线程终止"。在哪个线程如主线程，执行到 join方法，那个线程就让出执行权，其他的都等待。
+
+ toString()方法，Thread.currentThread().toString()   线程对象的字符串
+ 优先级：
+ thread1.setPriority(Thread.MAX_PRIORITY)   // 争夺cpu执行权的 最大优先级，还有最小Thread.MIN_PRIORITY 和默认Thread.NORM_PRIORITY
+ 线程组：  今后可以对一组线程进行操作。
+ new Thread(new ThreadGroup(), Runnable target)
+ 释放cpu执行权，自己和其他线程都有再抢夺的机会，这样使执行更均衡一些
+ thread1.yield();
+
+
+
+
+///----------------------------------------------------------------------------------------------------------------------
+1、字符串比较，忽略大小写：
+"ab".equalsIgnoreCase("AB")
+2、字符串中是否包含指定字符串
+"ab".contains("a");
+3、字符串是否以 指定字符串开头和结尾
+"ab".startsWith("a")  或    endsWith("b")
+4、字符串比较,按字典顺序比较两个字符串 compareTo，返回两个字的字典差距（返回0，大于0的整数，小于0的整数）
+前面的比后面大，返回正数，比后面小返回负数，相同返回0
+"be".compareTo("ba")    返回4
+5、indexOf  找子串第一次出现的位置，如果没找到返回-1.
+"abc".indexOf("d")     可以传第二个参数，代表从哪个位置开始找
+"abca".indexOf("a", 2)
+
+/// -------------
+StringBuffer 字符缓冲区
+StringBuffer sb = new StringBuffer();
+sb.append("sb").append(true);
+sb.insert(1, "sbsb");  // 在指定位置插入
+sb.delete(start, end)  // 包含头不包含尾，从第start位开始删除，删到end，不包含end
+sb.deleteCharAt(int index)   // 删除指定的一个
+sb.delete(0, sb.length())    // 清空缓冲区
+查找
+sb.charAt(index)         查找字符，返回char
+sb.indexOf(string)
+sb.lastIndexOf(string)
+替换
+sb.replace(1,2,"ss")   把1到2位，替换为ss
+
+/// --------------
+StringBuilder 与 StringBuffer等价。他是jdk1.5才出现的，而StringBuffer是jdk1.1就出现了。
+StringBuilder不保证线程同步，也就是线程不安全。而StringBuffer是线程安全。
+如果是单线程的，还是要用 StringBuilder,因为他不同步，所以速度快效率高。
+
+jdk升级的目的：
+1、简化书写
+2、提高效率
+3、增加安全性
+
+/// ---------------
+基本类型包装类
+int Integer
+byte Byte
+short Short
+long  Long
+float  Float
+double  Double
+char  Character
+boolean  Boolean
+
+
+Interger.valueOf("12345")  等价于
+Interger.parseInt("12345")
+字符串转为基本类型： 使用包装类的静态方法   xxx  parseXxx("xxx类型的字符串")
+int parseInt("123")
+long parseLong("123")
+Integer 包装类型转为基本类型    非静态方法  intValue()
+
+Integer进制转换：
+System.out.println(Integer.toBinaryString(10)); // 二进制
+System.out.println(Integer.toHexString(10)); // 十六进制
+System.out.println(Integer.toOctalString(10)); // 八进制
+System.out.println(Integer.toString(60, 8)); // 转八进制，后面的进制随便自己传
+
+// 其他进制转 2进制，后面的radix参数是随便自己传
+System.out.println(Integer.parseInt("110", 2));
+
+
+//--------------------
+集合的特点：
+1、用于存储对象的容器
+2、集合的长度是可变的
+3、集合中不可以存储基本数据类型值
+4、集合打印时直接打印元素值，方便观看。返回的字符串，直接system.out.println输入。
+
+集合容器因为内部的数据结构不同，有多种具体容器。不断向上抽取，最终形成了集合框架
+集合的框架顶层是  Collection
+常见的方法：
+-添加
+boolean add(Obj),
+boolean addAll(Collection coll) 添加一组，参数里传个集合进去
+-删除
+boolean remove(Obj)
+boolean removeAll(Collection coll)
+void clear()
+-判断,是否包含
+boolean boolean contains(obj)
+boolean containsAll(Collection coll)
+boolean isEmpty() 集合中是否有元素
+-获取
+int size()    元素个数
+Iterator<E> iterator()  返回迭代器对象
+-其它方法：
+boolean retainAll(Collection coll)   取交集
+Object[] toArray   将集合变为数组
+
+
+
+
+
+
+
+
+
+
+
+
+
+

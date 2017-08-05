@@ -20,6 +20,11 @@ Ctrl+Alt+t 选择代码块 try catch或if或while
 Ctrl+Left/Right移动光标到前/后单词，
 Ctrl+[   ]移动到前/后代码块
 
+Shift+Command+Enter  补全当前行，并在行末加上分号。
+alt + Command + L   格式化代码
+Ctrl + Alt + O   优化导入的包和类
+Command + Shift + U  大小写转换
+
 
 
 ##########################################################################

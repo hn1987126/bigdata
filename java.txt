@@ -4,6 +4,7 @@
   A a = new B();
 2、类继承了一个接口，接口里没有定义方法，而子类里有。则会编译错误。
 3、父类有一个方法，如果子类里再有一个相同的，但是是prive私有的，则会出错。或者父亲和子类方法名参数名一致，但是返回值类型不一致也会编译错误，因为方法歧义。
+4、对象 print的时候，会打印哈希值出来，如果想打印的好看，在类中重写下toString方法来输出类的属性。
 
 
 进程：正在进行中的程序
@@ -216,8 +217,8 @@ System.out.println(Integer.parseInt("110", 2));
 boolean add(Obj),
 boolean addAll(Collection coll) 添加一组，参数里传个集合进去
 -删除
-boolean remove(Obj)
-boolean removeAll(Collection coll)
+boolean remove(Obj)      // 集合的remove方法是会改变集合长度
+boolean removeAll(Collection coll)     // 将两个集合中的相同元素 从调用removeAll方法的集合中删除
 void clear()
 -判断,是否包含
 boolean boolean contains(obj)
@@ -227,8 +228,356 @@ boolean isEmpty() 集合中是否有元素
 int size()    元素个数
 Iterator<E> iterator()  返回迭代器对象
 -其它方法：
-boolean retainAll(Collection coll)   取交集
+boolean retainAll(Collection coll)   取交集，// retainAll功能刚与removeAll相反，把两集合中不同元素 从调用retainAll方法的集合中删除
 Object[] toArray   将集合变为数组
+
+#### 迭代器的循环：while循环，下面这种比while更好：
+for(Iterator it = coll.iterator(); it.hasNext();){
+   System.out.println(it.next());
+}
+
+Collection两个派系：
+List列表和Set集合（它们两是接口）
+|--List     有序（存入和取出的顺序一致），元素都有索引（角标）。元素可以重复。（三个常用的实现类：ArrayList, LinkedList, Vector）
+|--Set      元素不能重复，无序。
+
+List：特有的常见方法：有一个共性特点就是都可以操作角标
+|--添加：
+void add (int index, Obj element)     // 向角标位置添加元素
+void addAll(int index, Collection coll)
+|--删除
+Object remove(int index)
+|--修改
+Object set(int index, Obj element)  // 修改指定位置的元素
+|--获取
+Object get(int index)    // 获取单个元素
+int indexOf(Obj element)
+int lastIndexOf(Obj element)
+List subList(int from, int to)    // 获取指定位置区间的列表，包括前面的角标，不包括后面的角标。
+
+|--List能完成对元素的增删改查。
+除了Iterator取所有元素外(用while 或 for)，List还有特有的取所有元素方法：
+for (int i = 0; i < list.size(); i++) {
+    System.out.println(list.get(i));
+}
+|-- ListIterator 列表迭代器，List特有
+在迭代器迭代过程中，不要使用集合操作元素（如修改），会出异常。
+可以用Iterrator接口的子接口ListIterator来完成在迭代中对元素进行更多的操作，因为那个listIterator提供了set,remove等方法，可以一边迭代List,一边修改List
+List list = new ArrayList();
+list.add("abc1");
+list.add("abc2");
+ListIterator lit = list.listIterator();   // list.listIterator(1); 是从指定位置开始迭代
+while (lit.hasNext()) {
+
+    Object obj = lit.next();
+    if (obj.equals("abc2")){
+        lit.set("abc222");
+    }
+    if (obj.equals("abc6")){
+        lit.remove();
+    }
+}
+System.out.println(list);
+
+// 逆向遍历，hasPrevious相当于hasNext，previous()相当于next()
+while (lit.hasPrevious()) {
+    System.out.println(lit.previous());
+}
+
+|---- List接口的三个常见实现类    ArrayList, LinkedList, Vector
+    |-- Vector ： 内部是数组数据结构。内存空间连续。具有List的所有特点。是同步的，线程安全。已过时，基本不用。增删改查都很慢。
+    |-- ArrayList ： 内部是数组数据结构，是不同步的，线程不安全。替代了Vector。如果是需要多线程，可以给ArrayList加锁（把添加删除方法放在同一把锁里）。
+                     特点是查询快修改慢。查询快的原因，是因为地址连续，只要在那一片空间里查找，所以快。修改慢是因为插入一个元素，得移动其他几乎所有元素。
+    |-- LinkedList ：内部是链表结构，非同步。链表这种数据结构，由于每个元素记录了他之后元素的地址，增删改的速度特别快，
+                     只需要改变下记录的后面元素的地址，和改变下之前元素中记录的他后面一个元素的地址，不用像数组那样每个元素都进行移动。
+                     但是数组结构形式的，查询速度快。而链表形式的查询速度慢。
+
+
+
+|-LinkedList特有的方法：   LinkedList link = new LinkedList();
+void addFirst(Obj element)    往头部添加
+void addLast(Obj element)    往末尾添加
+jdk1.6加入了如下替代方法：
+offFirst()
+offLast()
+
+查询头尾：
+getFirst   获取但不移除，如果链表为空，抛出NoSuchElementException
+getLast。
+jdk1.6加入了如下替代方法：
+peekFirst      获取但不移除，如果链表为空，返回null
+peekLast
+
+删除：
+removeFirst    // 获取并移除，如果链表为空，抛出NoSuchElementException 。removeFirst会返回删除的那个元素。
+removeLast
+jdk1.6加入了如下替代方法：
+pollFirst      获取并移除，如果链表为空，返回null
+pollLast
+
+
+|- 请使用LinkedList来模拟一个堆栈或队列数据结构
+|-- 堆栈  先进后出  First in Last out     FILO       举例：吐
+|-- 队列  先进先出  First in First out    FIFO       举例：拉屎
+
+// ----------------------------------------------------------
+Set ： 元素不可以重复，是无序
+|- Set接口中的方法与Collection一致。
+子类：也就是实现类  HashSet,TreeSet
+|- HashSet ：  内部数据结构是哈希表。无序，迭代也无序，顺序会变化，允许null元素，不同步，线程不安全。性能稳定。
+  |- LinkedHashSet         HashSet再加一层链表。查找方便。
+|- TreeSet ：  可以对Set集合中的元素进行排序。是不同步的。判断元素唯一性的方法：就是根据比较方法结果是否返回0，是0就是相同元素，不会再存储。在每添加一个元素的时候都会去判断。
+
+哈希算法：
+其实底层存的也是类似于Array这样的，只不过查找的时候特别快，因为查找的时候，直接根据元素就能找到位置。
+怎么存进去呢？
+流程是：来一个元素，根据hashCode，也就是AccIss码，得到一个数值，取模，如算出来的值是100，数组的长度的10，那就100%10，得到0-9之间的数。
+按位置存进去。查询的时候，再用同样的算法算得位置，直接把那位置的元素拿出来。
+存的时候，因为hashCode可能会把不同的元素算成相同的值（如字符串ab,和ba）。这时会先看那个位置有没有元素，如果有元素，再判断之前存的那个元素和要添加的元素是否相等。
+怎么判断相等？直接用 equals方法。注意如果hashCode都不同，那第二步就不需要判断了，直接存即可。
+这就使得，哈希列表，肯定不会有重复元素的。上面讲的，如果内容也完全相同，那就直接不存新插入的元素。
+如果hashCode相同，内容不同（如ab和ba），则称为哈希冲突，通常不会出现这种情况，因为哈希算法不会是简单的用Acciss码来。
+冲突的解决办法：顺延，把新插入元素放在之前元素后面的空位置，如果不够长度会将数组的长度延长。
+另外一种是 串连，即那个位置再外挂一个出来，存新插入的元素。
+查找的时候也解决了，内部这个位置会记录外挂或顺延这两种方式，得到那个重复hashCode的元素。
+
+String这个类，本身就有hashCode()方法 和 equals()比较内容是否相等的方法。
+会根据String自身的特点，进行hash算法。
+自己定义的类，因为是继承了Object，也会有hashCode方法和equals方法，如人类，里面有姓名和年龄，
+如果想只根据姓名来判断是同一个人，可以重写父类Object的hashCode方法和equals方法。
+Object父类的hashCode方法，是native 这个修饰符修饰的，代表着他底层是调 原生态方法，方法对应的实现不是在当前文件，而是在用其他语言（如C和C++）实现的文件中
+
+**** 重点注意：：：
+数据结构不一样，判断元素是否相同(如a.contains(b)和 remove(b))【remove的时候也得先去查找，再删除】 等也不相同：
+如ArrayList，他们判断元素相同只是判断 equals这个方法，如默认是判断地址是否相同，可以重写这个方法，来如按姓名和年龄，他们两相同，就可以认为是同一人，不用管地址。
+如HaseSet，他就必须同时hashCode相同和equals相同，才是真的相同。
+   当然也可以重写他们，如hashCode里自定义算法，如返回的hash值是 return 姓名.hashCode()+age*40 这样的算法。[注意，姓名.hashCode()这是字符串的hashCode，可不是本对象中的]
+
+
+|----  HashSet 是无序的，不能重复的。
+如果我们想要有顺序，可以用HashSet的子类： LinkedHashSet 。就是在HashSet 原有算法、存储 的基础上，再记录了下个元素的位置，做到了有序。
+使用和HashSet完全相同： LinkedHashSet是和存储一致的顺序
+HashSet hs = new LinkedHashSet();
+
+|-- TreeSet集合也是Set接口里的子类：
+他和HashSet不一样，人根本就不看Hashcode，他只看   自己定义的类实现 Comparable接口，实现的方法CompareTo
+判断元素唯一性的方法：就是根据比较方法结果是否返回0，是0就是相同元素，不会再存储。在每添加一个元素的时候都会去判断。
+这个方法需要在里面比较元素的大小，添加的时候就要，因为那如果不判断，返回0，其他的元素就添加不进去。实现了这个方法，在添加的时候，他就有序了。
+
+// 覆盖比较方法，先比较年龄，再比较姓名。Person类，需要实现Comparable接口，并重写compareTo方法。是写在实体类上的。
+@Override
+public int compareTo(Object o) {
+    int temp = this.age - s.age;
+    return temp == 0 ? this.name.compareTo(s.name) : temp;
+}
+
+|-- TreeSet对元素进行排序的方式一：   在实体类上实现Comparable接口 并重写 compareTo方法
+就是上面那种，让元素也就是自己定义的类，自身具备比较功能，就需要实现Comparable接口，覆盖里面的CompareTo方法。
+|-- TreeSet对元素进行排序的方式二：   单独再定义一个类 实现Comparator接口并重写 compare方法
+如果不要按照对象中具备的自然顺序进行排序，如果对象中不具备自然顺序。如果这个对象根本就不是我们定义的。怎么办？可以使用TreeSet集合的第二种排序方式：
+----- 让集合自身具备比较功能。也就是在集合创建的时候，在构造函数里传入一个比较器 Comparator
+/**
+ * 比较器，需要实现Comparator接口
+ */
+class ComparatorByName implements Comparator{
+
+    @Override
+    public int compare(Object o1, Object o2) {
+        Student s1 = (Student) o1;
+        Student s2 = (Student) o2;
+
+        int temp = s1.getName().compareTo(s2.getName());
+        return temp == 0 ? s1.getAge() - s2.getAge() : temp;
+    }
+}
+如果方式一和方式二都存在了，则以比较器为准，也就是方式二。推荐使用比较器Comparator。怎么用呢？
+比如  TreeSet ts = new TreeSet(new ComparatorByName());    在构造方法里传进去，这个ts对象就已经有可比较性了。
+
+|-- TreeSet底层的结构：：二叉树
+二叉树怎么提高效率？利用二分折半查找，因为二叉树放完两个元素，他们就已经把顺序排了，再排第10个的时候，前9个已经有顺序了，所以可以用二分法折半查找。
+
+
+
+=======================================================================================================================
+|--------- 集合框架中，与Collection 同样的顶级 容器， Map
+Map一次添加一对元素，Collection一次添加一个元素。
+Map也称双列集合，Collection是单列集合。
+Map集合中存储的就是键值对。必须保证键的唯一性。
+Map集合是无序的。
+
+|-常用方法：
+1、添加
+value返回值 put(Object key, V value)   // 添加，如果key已经存在，则会新value覆盖原来的值，并返回原来的value，如果不存在则返回null
+
+2、删除
+void remove(Object key)   // 删除一个元素
+value返回值 clear();   // 移除所有映射关系，返回那个删除的元素
+
+3、判断
+boolean containsKey(key);
+boolean containsValue(value);
+boolean isEmpty();
+
+4、获取
+value返回值 get(Object key)   //通过键返回value，如果不存在 返回null，当然可以通过返回null来判断是否包含指定键。
+int size()   // 获取键值对的个数
+Collection<T> values()   // 取出所有的vlue。values返回Collection，为啥不返回set呢？因为值是不唯一的，而key是唯一的，所以只能返回Collection
+Set keySet()    // 取出所有的key
+Entry entrySet()   // 取出所有的k,v放入到Entry这种类型的Set中。
+
+##### 取出map的所有元素：
+// 方法1：  keySet 可以理解成 丈夫的合集
+// 通过keySet方法获取 map中所有的 key 得到set集合,通过set的迭代器获取到每一个键，再对每一个键通过map集合的get方法获取其对应的值即可
+Set keySet = map1.keySet();
+Iterator it = keySet.iterator();
+while (it.hasNext()) {
+    System.out.println(map1.get(it.next()));
+}
+
+// 方法2：entrySet 可以理解成结婚证书的合集
+// 通过Map转换成Set就可以迭代，entrySet方法将键和值的映射关系作为对象存储到Set集合中，而这个映射关系的类型就是Map.Entry类型(结婚证)
+Set<Map.Entry<Integer, String>> entries = map1.entrySet();
+Iterator<Map.Entry<Integer, String>> it1 = entries.iterator();
+while (it1.hasNext()) {
+    Map.Entry<Integer, String> en = it1.next();
+    System.out.println(en.getKey()+1+"--"+en.getValue());
+}
+
+// 只要map里元素的值，不要key，vlues返回Collection，为啥不返回set呢？因为值是不唯一的，而key是唯一的，所以只能返回Collection
+System.out.println(map1.values());
+
+
+|------------- Map常用的子类：
+|--HashTable   内部结构是哈希表，是同步的，因为jdk1.0就有了，不支持Null作为键和值。
+    |--Properties  用来存储键值对型的配置文件的信息。和IO技术结合才能发挥最大的作用。他是HashTable里的子类。
+
+|--HashMap     内部结构是哈希表，不是同步的。允许null作为键和值。Set集合里的HashSet是HashMap的一个实例。
+    |--LinkedHashMap   链表结构的哈希表，有序的。
+|--TreeMap     内部结构是二叉树，不是同步的。可能对Map集合中的键进行排序。他是有序的是，与TreeSet一样。
+
+
+
+
+
+=======================================================================================================================
+java中，只要用到了带有<>的类或者接口，就要明确传入的具体引用数据类型
+泛型技术是给编译器使用的技术，用于编译时期，确保了类型的安全。
+运行时，会将泛型去掉，因为生成的class文件中是不带泛型的，这个称为泛型的擦除。
+为什么擦除？因为为了兼容运行的类加载器。
+泛型的补偿：在运行时，通过获取元素的类型进行转换动作。不用使用者再强制转换。
+
+|--- 泛型类、泛型方法、泛型接口：：：：：：：
+将泛型定义在类上，全类通用。
+如果想在方法上再定义一个泛型。可以再定义：(泛型必须放在返回值前面，修饰符后面，参与静态方法的泛型定义)
+public class Student<T>{
+    T stu;
+    public <W> void show(W str){}
+    public void show1(T str){}
+    // 当方法是静态的时，不能访问类上定义的泛型。如果静态方法想用泛型，只能定义在方法上。
+    public static <T> void show2(T str){}
+}
+|-泛型接口：
+interface Inter<T>{
+    public void show(T t);
+}
+|-实现泛型接口：
+class InterImpl implements Inter<String>{
+    public void show(String str){}
+}
+
+|- 泛型的通配符：  符号来通配。? 也就是未知类型
+如  public static void printCollection(Collection<?> col) {}  传过来的参数可以是任意类型。
+这个在 containsAll(Collection <?> c) 方法中用的比较多，因为比较，是用equals，任何类型都有equals方法，字符串也可以和对象进行比较。
+还有 removeAll(Collection<?> c) 中也是这样用。他们原理一样，先用equals 找出与后面传过来相同的东西，再操作删除。
+
+|- 泛型的上限：    ? extends E  接收E类型或E的子类型对象。
+public static void printCollection(Collection<? extends Person> col) {
+    Iterator<? extends Person> it = col.iterator();
+    while (it.hasNext()) {
+        Person p = it.next();
+        System.out.println(p.getName()+"--"+p.getAge());
+    }
+}
+|- 泛型的下限： ? super E     接收E类型或E的父类型，下限。
+一般存的时候，用上限，如List集合里有  addAll方法，传一个集合进去，批量添加。那时可以在参数上加个 上限的泛型。
+因为这样，取出都是按照上限的类型来运算的，不会出现类型安全隐患。
+
+// ---------------------------------------------------------------------------------------------------------
+集合 大家庭：
+|-Collection
+  |-List
+    |-ArrayList
+    |-LinkedList
+  |-Set
+    |-HashSet
+      |-LinkedHashSet
+    |-TreeSet
+|-Map
+  |-HashMap
+    |-LinkedHashMap
+  |-TreeMap
+
+集合的一些技巧：
+需要唯一吗？
+ |-需要  找set
+   |-需要顺序吗？
+     |-需要  找TreeSet
+     |-不需要  HashSet
+      但是想要一个和存储一致的顺序（有序）：LinkedHashSet
+ |-不需要  找List
+   |需要频繁增删吗？
+     |-需要：LinkedList
+     |-不需要：ArrayList
+
+如何记录每一个容器的结构和所属体系？  看名字
+List
+  |-ArrayList
+  |-LinkedList
+Set
+  |-HashSet
+  |-TreeSet
+后缀名就是该集合所属的体系。前缀名就是该集合的数据结构。
+
+看到array，就要想到数组，就要想到查询快，有角标。
+看到link，就要想到链表，就想想到增删快，就想想到add get remove等 + first last的方法。
+看到hash，就要想到哈希表，就要想到唯一性，就要想到元素需要覆盖hashCode方法和equals方法。
+看么tree，就要想到二叉树，就要想到排序，就要想到两个接口Comparable,Comparator。
+而且通常这些常用的集合都是不同步的，线程不安全的，效率高。
+
+排序和有序的区别：
+如LinkedHashSet 是有序，怎么存进去怎么取出来。
+而TreeSet是排序，他还是无序的，只不过按我们指定的顺序给排出来的，并不代表他存的时候就是那个顺序。
+如存进去的时候是：
+HashMap map = new HashMap();
+map.put(7, "a");
+map.put(1, "b");
+输出的时候是1，7输出，这代表是无序的，只不过结果里是按key的大小来排列的。
+HashMap map = new LinkedHashMap();
+再执行上面的put方法，得出的结果是  7,1，这是有序的，怎么存进去怎么取出来。
+
+
+
+=======================================================================================================================
+工具类：Collections、Arrays
+Collections.sort(list);  //把list里的元素按自然顺序 进行升序排序
+Collections.sort(list, Comparator c);  // 按指定的 比较器 进行排序
+Collections.swap(list, int i, int j);  //把list的i和j位置交换元素
+Collections.binarySearch(list, 元素);   //使用二分法折半查找，这个要求先用sort排序完再找。返回索引号
+Collections.max(list) 和 Collections.max(list)  取集合的最大 最小值
+Collections.reverseOrder()    // 返回逆序构造器，可直接用于构造方法中作为参数传进去。
+  以前在创建TreeSet的时候，需要强制的有比较器（要么new的时候传比较器进去，要么添加的元素所在的类自己实现了Comparable接口）。这个方法就不用那么麻烦，
+  在TreeSet new的时候，构造方法里，传这个 进去。如 TreeSet ts = new TreeSet(Collections.reverseOrder());
+  所有的集合都可以用他   如  Collections.sort(list, Collections.reverseOrder()); 这是指定逆序来排列
+Collections.reverseOrder(已有的比较器)    // 把已有的比较器的结果进行逆转。
+Collections.reverse(list)     //对结果进行反转。
+Collections.replaceAll(list, oldVal, newVal)   // 旧元素替换为新元素
+Collections.fill(list, val)   // 把list里的所有元素都换成 val这个元素
+Collections.shuffle(list)   // 随机洗牌随机排序
+Collections.synchronizedCollection(collection)   // 返回同步的线程安全的collection
+Collections.synchronizedList(list)   // 返回同步的线程安全的List
+Collections.synchronizedMap(map)  // 返回线程安全的Map
+Collections.synchronizedMap(Set)  // 返回线程安全的Set
+
 
 
 

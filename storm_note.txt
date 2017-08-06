@@ -24,6 +24,7 @@ Shift+Command+Enter  补全当前行，并在行末加上分号。
 alt + Command + L   格式化代码
 Ctrl + Alt + O   优化导入的包和类
 Command + Shift + U  大小写转换
+alt + command + M   把代码块抽取为方法
 
 
 

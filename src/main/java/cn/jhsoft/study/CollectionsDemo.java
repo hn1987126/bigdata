@@ -52,6 +52,7 @@ public class CollectionsDemo {
 
         Collections.shuffle(list);
         System.out.println(list);
+        
 
     }
 }

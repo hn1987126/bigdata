@@ -203,7 +203,9 @@ System.out.println(Integer.toString(60, 8)); // 转八进制，后面的进制�
 System.out.println(Integer.parseInt("110", 2));
 
 
-//--------------------
+########################################################################################################
+###################### 集合
+########################################################################################################
 集合的特点：
 1、用于存储对象的容器
 2、集合的长度是可变的
@@ -577,6 +579,288 @@ Collections.synchronizedCollection(collection)   // 返回同步的线程安全�
 Collections.synchronizedList(list)   // 返回同步的线程安全的List
 Collections.synchronizedMap(map)  // 返回线程安全的Map
 Collections.synchronizedMap(Set)  // 返回线程安全的Set
+Collections.toArray()      // 集合转为数组，会返回Object类型的数组。还有一个带参数的toArray方法，那返回 参数中 指定类型的数组。如 Collections.toArray(new String[2]);
+                              集合变数组后，不允许增删，长度不能变。如果不想别人对你的数字进行增删，那就返回一个数组给别人。
+                              toArray方法需要传入一个指定类型的数组的时候：长度如何定义？
+                              如果长度小于集合的size，那么该方法会创建一个同类型并和集合相同的数组。
+                              如果长度大于集合的size，那么该方法会使用指定长度的数组，存储集合中的元素，其他位置默认为null
+                              所以建议，长度就指定为集合的size。如：
+                              Collections.toArray(list, new String[list.size()]);
+
+
+
+Arrays.binarySearch(arr, key)    //二分查找
+Arrays.copyOf()   // 复制
+Arrays.copyOfRange(arr, int form, int to)  // 复制指定的位置长度到指定的新数组
+Arrays.equals(arr1, arr2)   // 两数组是否相等
+Arrays.deepEquals(arr1, arr2)   // 数组比较，不仅比较内容，还进行深度的比较
+Arrays.fill(arr, key)   // 替换所有元素
+Arrays.hashCode(arr)   // 算指定数组的哈希值
+Arrays.sort(arr)    // 排序
+Arrays.toString(arr)    // 转为字符串，用于打印，因为如果直接打印数组，是出来哈希值，调用这个方法就会出现字符串。
+Arrays.asList(arr)   // 把数组转为List集合，好处就是可以用集合的方法操作数组。注意数组的长度是固定的，用集合的方法不能改变他的长度，比如不能add/clear/remove
+                        如果数组中的元素是对象，asList会将数组中的元素转为集合中的元素存储
+                        如果数组中的元素是基本数据类型，如int，那么会将数组作为集合中的元素进行存储。所以这个数值数组是一个整体，转成集合后，集合里只有一个元素，就是数值数组。
+
+
+
+########################################################################################################
+###################### jdk1.5 高级特性
+########################################################################################################
+|- 增强型 for 适合迭代器操作：（它只适合遍历 数组 或 单列集合，不能遍历Map这样的双列集合，但是可以遍历Map里的keySet和EntrySet）
+Iterator it = list2.iterator();
+while (it.hasNext()) {
+    System.out.println(it.next());
+}
+等价于：
+// 高级for只用于遍历和迭代，不会对元素进行过多的操作。
+for (String s:list2){
+    System.out.println(s);
+}
+
+// 高级for  遍历Map里的keySet和EntrySet
+Map<String, String> map = new HashMap<>();
+for (String key:map.keySet()){
+    System.out.println(key+"--"+map.get(key));
+}
+for (Map.Entry<String, String> en:map.entrySet()){
+    System.out.println(en.getKey()+"--"+en.getValue());
+}
+
+|- 可变参数：  必须定义在参数列表的结尾处，而且只能用一个可变参数
+public static void method1(String... arr){
+    System.out.println(Arrays.toString(arr));
+}
+method1();
+method1("abc1", "abc12", "abcd3");
+
+|- 静态导入
+如： 使用工具类 Collections和Arrays。每次用的时候，都是都需要写这两个单词。
+import static java.util.Collections.sort;
+导入这个，注意需要是静态的 static
+以后再书写就只需要写   sort(list);了，不就用  Collections.sort(list);
+import static java.util.Collections.*;  // Collections包里的所有的都静态导入
+
+
+
+########################################################################################################
+###################### 其他对象、Api、工具
+########################################################################################################
+|- System(java.lang包下)  它是final类型的类，不允许被实例化，里面的方法和属性都是静态的。以下三个是它的字段
+  |- System.out  输出流
+  |- System.in   输入流
+  |- System.err  错误输出流
+常用方法：
+long System.currentTimeMillis()   // 毫秒数，相对于1970年1月1日
+System.getProperties()  //获取当前系统的属性信息，返回Properties集合[继承自HashTable,也就是Map的子类]
+  |- Properties集合中存储的都是String类型的键值对，最好使用他自己的存储和取出方法来完成元素的操作。
+     有方法 |- setProperty(String key, String value);  设置键值
+           |- stringPropertyNames()   返回此集合中的键集。
+           |- getProperty(String key)  获取值
+
+代码展示 Properties集合
+// Properties集合，继承自HashTable，继承自Map双列集合
+Properties pro = System.getProperties();
+// 获取里面所有的key
+Set<String> keySet = pro.stringPropertyNames();
+for (String str : keySet) {
+    // 根据key找value
+    System.out.println(str+"："+pro.getProperty(str));
+}
+
+### 好用的地方：比如在windows下和linux下，换行符不一样，windows是 \n，linux是 \r
+所以可以今后写换行的地方，这样写：
+System.out.println("Hello"+System.getProperty("line.separator")+"world");
+也可以把它抽出来放在静态常量里：
+private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+System.getProperties() 这里可以获取当前项目的classpath，是在当前项目的bin目录下。
+System.setProperty("myclasspath", "/wordcount/input/bin");   设置自己的属性到系统属性中。这些信息是全局的，其他程序都可以使用。
+
+
+|- Runtime 运行时类，通过 getRuntime()来获取当前运行时对象。它是单例的。
+这个类没有构造方法，说明它不能创建对象。又有非静态方法，说明该类提供了静态的返回该类对象的方法。
+而且只有一个方法，说明Runtime类使用了单例设计模式。
+
+## 实例化 Runtime是java.lang包下的
+Runtime r = Runtime.getRuntime();
+## 调用本地程序  如打开记事本，返回Process 进程号，返回Process类。
+r.exec("notepad.exe");
+// 运行记事本，并解析一个文件。如打开播放器，加空格指定影片的位置，会打开播放器的同时播放那个电影。
+Process p = r.exec("notepad.exe C:\\sys001.log");
+Thread.sleep(5000);
+// 杀掉这个进程，只能杀自己开的，非自己开的不能杀
+p.destroy();
+
+|- Math (java.lang包下) 数学类
+常量：：：
+Math.PI    3.1415926
+方法：：：
+Math.ceil(12.56);  返回大于参数的最小整数
+Math.floor()   返回小于参数的最大整数
+Math.round()   四舍五入后的整数
+Math.max(3, 4)  返回比较的大值
+Math.pow(a, b)  返回第a的b次方。
+Math.random()   返回0(包含0)，到1(不包含)之间的小数，如0.4323432333356
+想生成1到10的整数： 两种方法
+double d = Math.ceil(Math.random()*10);
+double d1 = (int)(Math.random()*10+1);
+通过Random类来随机：：
+Random r = new Random();
+r.nextInt(10);   返回最多为10，不包括10，的整数。包括0，最小为0
+
+
+|- Date 日期(java.util.Date包)
+日期对象初始化：
+两个构造方法，一个是带参数的，一个是不带参数的。
+带参数是毫秒值，返回那个时间的日期。不带参数是当前时间的日期。
+
+毫秒值 转为 日期对象：
+1、通过Date对象的构造方法  new Date(timeMillis);
+2、通过Date对象的方法设置  date1.setTime(timeMillis);
+可以通过Date对象的方法对该日期中的各个字段如年月日等进行操作。
+
+日期对象 转为 毫秒值：【可以通过具体的数值进行运算 如 加10000毫秒】
+1、date1.getTime() 方法
+
+其他方法：
+date1.compareTo(Date date2)  // 比较两日期，返回int类型，与String等比较一致
+date1.equals(Date date2)     // 两日期是否相等
+date1.toString()     把日期按这种格式显示  星期几 几月 几号 时分秒 时区 年
+
+|- 日期格式化：  SimpleDateFormat (java.text.SimpleDateFormat 包)
+它是 DateFormat的子类。下面这两种方式是 用 DateFormat来格式化：
+DateFormat df = DateFormat.getDateInstance(DateFormat.LONG);
+System.out.println(df.format(date2));
+DateFormat df1 = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG);
+System.out.println(df1.format(date2));
+
+这样很麻烦，他提供了 SimpleDateFormat子类：：：
+SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+String date_str = sdf.format(date2);  // 转为指定格式的字符串了
+Date date3 = sdf.parse(date_str);     // 把指定格式的字符串 转为日期
+
+|- Calendar 日历类 (java.util.Calendar 工具包)
+创建日历类：
+Calendar cal = Calendar.getInstance();
+
+// 设置年
+cal.set(Calendar.YEAR, 2019);
+
+// 加两年,减2年是 -2
+cal.add(Calendar.YEAR, 2);
+cal.add(Calendar.DAY_OF_MONTH, -2);  // 减两天
+
+// 获取年月日星期
+int year = cal.get(Calendar.YEAR);
+int month = cal.get(Calendar.MONTH)+1; // 这样获取会比当前真正月小1，需要加1
+int day = cal.get(Calendar.DAY_OF_MONTH);
+int week = cal.get(Calendar.DAY_OF_WEEK); // 老外的星期日是1，星期一是2
+
+// 获取当前是第多少周
+cal.getWeeksInWeekYear()
+
+
+
+
+########################################################################################################
+###################### IO (Input Output) 流
+########################################################################################################
+|-输入流和输出流：：：
+输入流和输出流是相对于内存设备而言，将外设中的数据读取到内存中，就是输入(读)；
+将内存中的数据写入到外设中，就是输出(写)。
+硬盘的数据放到内存中计算，是输入，输入就是读。
+内存中的数据写到到硬盘中，是输出，输出就是写。
+
+|-按操作数据类型不同  分两类：
+字节流     // 计算机里的一切都是字节，字节流 可以处理一切数据
+字符流     // 知识：编码表：美国ascii码表,中国GB2312 GBK,国际组织unicode码表。
+字符流的由来，就是 字节流 读取文字字节数据后，不直接操作，而是先查指定的编码表，获取对应的文字。
+再对这个文字进行操作，简单的说：就是   字节流 + 编码表
+
+|-四个顶层基类
+字节流的2个顶层抽象基类   1、InputStream        2、OutputStream
+字符流的2个顶层抽象基类   1、Reader(读、输入)    2、Writer(写、输出)
+这些体系的子类都是以父类名作为后缀。而且子类名的前缀就是该对象的功能。
+
+如果要操作文字数据，建议优先考虑字符流。
+而且将数据从内存写到硬盘上，要使用字符流中的输出流 Writer
+硬盘的数据基本体现是文件，希望找到一个可操作文件的Writer。就是FileWriter。
+
+|- FileWriter 写文件
+private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+/*
+创建一个可以往文件中写入字符数据的字符输出流对象
+既然是往一个文件中写入文字数据，那么在创建对象时，就必须明确该文件(用于存储数据的目的地)
+如果文件不存在，则会自动创建。
+如果文件存在，则会被覆盖，也就是先删掉再创建。
+构造函数里可以指定第二个参数，是否追加写入，默认是覆盖。
+* */
+FileWriter fw = new FileWriter("demo1.txt", true);
+// 调用 write 方法 ，数据会被临时存储，写入到了临时存储缓冲区中。
+fw.write("sf"+LINE_SEPARATOR+"sbbb");
+// 进行刷新，将数据从缓冲区 写到目的地中。
+//fw.flush();
+// 关闭流关闭资源，关闭之前，会自动调用flush()
+fw.close();
+
+|-FileReader 读取文件
+/**
+ 创建读取字符数据的流对象。
+ 在创建读取流对象时，必须要明确被读取的文件。一定要确定该文件是存在的
+ 用一个读取流 关联一个已存在的文件。
+ 读文件的过程：本质上是一次读一个字节，只不过用char[] buf = new char[1024]，
+ 是把一次读一个字节，先放在这个数组里，等这个数组满1024，或者读到 -1 代表读完了。
+ 再把这个char[] 字节数组转为 字符串。完成读取过程。
+ */
+FileReader fr = new FileReader("demo1.txt");
+// 使用read(char[])读取文本文件数据，一般这数字就是1024，因为存储时就是按这大小来存的。
+char[] buf = new char[1024];
+// 将读到的字符存储到数组中，返回读取到的字符数量。
+int len = 0;
+while ((len = fr.read(buf)) != -1){
+    System.out.println(new String(buf, 0, len));
+}
+
+|-复制文件
+// 练习：复制c盘的文本文件到d盘
+// 思路就是先读取出源文件，再写入到目标文件。既然是操作文本文件，使用字符流
+// 读数据
+FileReader fr = new FileReader("c:\\sys001.log");
+// 写数据
+FileWriter fw = new FileWriter("c:\\sys001_copy.log");
+// 创建一个临时容器，用于缓存读取到的字符。
+char[] buf = new char[1024];
+// 定义一个变量记录读取到的字符数，其实就是往上面那个数组里装的字符个数，他大小是1024，可能本次只装了20
+int len = 0;
+while ((len = fr.read(buf)) != -1) {
+    // 这个得只能写0到len，不然会把1024这个字节数组都写进去了，很多空格。
+    fw.write(buf, 0, len);
+}
+// 关闭流
+fw.close();
+fr.close();
+
+|-缓冲区：java提供了两个缓冲区，缓冲读java.io.BufferedReader  缓冲写java.io.BufferedWriter
+缓冲区就是对要操作的内容进行临时缓存，提高效率。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

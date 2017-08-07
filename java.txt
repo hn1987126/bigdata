@@ -5,6 +5,7 @@
 2、类继承了一个接口，接口里没有定义方法，而子类里有。则会编译错误。
 3、父类有一个方法，如果子类里再有一个相同的，但是是prive私有的，则会出错。或者父亲和子类方法名参数名一致，但是返回值类型不一致也会编译错误，因为方法歧义。
 4、对象 print的时候，会打印哈希值出来，如果想打印的好看，在类中重写下toString方法来输出类的属性。
+5、Ascii码转为字符   (char)97   得到 b
 
 
 进程：正在进行中的程序
@@ -808,9 +809,10 @@ fw.close();
  创建读取字符数据的流对象。
  在创建读取流对象时，必须要明确被读取的文件。一定要确定该文件是存在的
  用一个读取流 关联一个已存在的文件。
- 读文件的过程：本质上是一次读一个字节，只不过用char[] buf = new char[1024]，
- 是把一次读一个字节，先放在这个数组里，等这个数组满1024，或者读到 -1 代表读完了。
- 再把这个char[] 字节数组转为 字符串。完成读取过程。
+ 读文件的过程：本质上是一次读一个字符，只不过用char[] buf = new char[1024]，
+ 是把一次读一个字符，先放在这个数组里，等这个数组满1024，或者读到 -1 代表读完了。
+ 再把这个char[] 字符数组转为 字符串。完成读取过程。
+ read方法，不带参数是一次取一个字符。如果带参数是指一次读取一个字符数组的字符。(本质也是一个一个读)
  */
 FileReader fr = new FileReader("demo1.txt");
 // 使用read(char[])读取文本文件数据，一般这数字就是1024，因为存储时就是按这大小来存的。
@@ -833,7 +835,7 @@ char[] buf = new char[1024];
 // 定义一个变量记录读取到的字符数，其实就是往上面那个数组里装的字符个数，他大小是1024，可能本次只装了20
 int len = 0;
 while ((len = fr.read(buf)) != -1) {
-    // 这个得只能写0到len，不然会把1024这个字节数组都写进去了，很多空格。
+    // 这个得只能写0到len，不然会把1024这个字符数组都写进去了，很多空格。
     fw.write(buf, 0, len);
 }
 // 关闭流
@@ -842,19 +844,140 @@ fr.close();
 
 |-缓冲区：java提供了两个缓冲区，缓冲读java.io.BufferedReader  缓冲写java.io.BufferedWriter
 缓冲区就是对要操作的内容进行临时缓存，提高效率。
+他里面有个好方法： 对象.newLine();   写入一个换行符，适应不同平台。
+
+缓冲 BufferedWriter 代码
+----------------------------------------------------------------------------
+FileWriter fw = new FileWriter("buf.txt");
+// 为了提高写入的效率使用字符流的缓冲区。
+// 创建一个字符写入流的缓冲区对象，并和指定要被缓冲的流对象相关联
+BufferedWriter bw = new BufferedWriter(fw);
+// 使用缓冲区的写入方法，他的方法与Writer完全相同
+bw.write("abc");
+bw.newLine();
+bw.write("def");
+// 使用缓冲区的刷新方法将数据刷新到目的地。一定要刷新，write一次刷新一次。
+bw.flush();
+// 关闭缓冲区，其实关闭的就是缓冲的流对象。关了缓冲区以后，文件的流也就关闭了。
+bw.close();
 
 
+缓冲 BufferedReader 代码
+----------------------------------------------------------------------------
+文本类型的流特有的：可以一次读取一行。（根据回车符判断是否换行）。里面提供了 readLine() 方法。
+FileReader fr = new FileReader("buf.txt");
+BufferedReader br = new BufferedReader(fr);
+String line = null;
+// 最后一行，如果不存在，返回null
+while ((line = br.readLine()) != null){
+    System.out.println(line);
+}
+br.close();
+BufferedReader 的 read()方法，是从缓冲区里读，覆盖了他父类的read()方法，他父类是从硬盘上取。
+这个read()方法很高效。也可以传一个字符数组参数进去一次读到字符数组中。
+readLine()取的数据，是取一行，他的原理与read()一样，一个一个读，只不过读到换行符就终止并返回，
+返回的只是字符数据，不包括换行符。如读完了，则返回null。
 
 
+NumberLineReader(用到行号时才用他)  是BufferedReader 的子类，也是装饰，他增加的功能就是 能获取和设置 当前的行号。
+----------------------------------------------------------------------------
+FileReader fr = new FileReader("buf.txt");
+LineNumberReader br = new LineNumberReader(fr);
+// 设置行号从哪开始
+br.setLineNumber(100);
+String line = null;
+while ((line = br.readLine()) != null) {
+    System.out.println(br.getLineNumber()+":"+line); // 获取行号
+}
 
 
+装饰设计模式：   外观改变，本质实际没改变。
+----------------------------------------------------------------------------
+设计模式是用来解决问题的。
+它是对一组对象的功能进行增强时，就可以使用该模式进行问题的解决。下面的NewPerson就是对Person的增强，装饰。
+其实上面的 输入输出流和他们的缓冲区，缓冲区就是对输入输出流的 装饰。
+public class PersonDemo {
+
+    public static void main(String[] args) {
+        Person p = new Person();
+        NewPerson np = new NewPerson(p);
+        np.eat();
+    }
+
+}
+
+class Person{
+    void eat(){
+        System.out.println("吃饭");
+    }
+}
+
+class NewPerson{
+    Person p;
+    NewPerson(Person p) {
+        this.p = p;
+    }
+
+    void eat(){
+        System.out.println("甜点");
+        p.eat();
+        System.out.println("水果");
+    }
+}
+继承也能达到这种效果，为啥不用继承？要用装饰呢？因为装饰更灵活，因为他可以对一组(如父类)进行增强。而继承只能继承具体的一个类，
+有一个类要增加就继承他一下，但是一组的怎么解决？他又不能继承父类，继承父类，那子类就用不上。而装饰可以。
+
+装饰比继承灵活。
+装饰类和被装饰类 都必须所属于同一接口或父类。被装饰类可以是那个父类，一装饰，本父类下的所有类都能用。
 
 
+----------------------------------------------------------------------------
+字节流 byte
+----------------------------------------------------------------------------
+----------------------------------------------------------------------------
+字符流的缓冲区的数组是 char 字符。对一个中文字，字符流一次就能读出来。而字节流需要2次才能读出来。
+字节流的缓冲区的数组是 字节 byte
+
+|- 输出流（内存到硬盘，也就是写数据）
+----------------------------------------------------------------------------
+// 创建字节输出流对象，用于操作文件
+FileOutputStream fs = new FileOutputStream("bytestream.txt");
+// 写数据，直接写入到了目的地中，所以不需要flush也就是不需要缓冲。缓冲区Buffer才会用到flush方法。
+fs.write("abc".getBytes());
+// 需要完成资源关闭
+fs.close();
+
+|-输入流（硬盘到内存，也就是读数据）
+----------------------------------------------------------------------------
+// 创建读取流对象，和指定文件关联。
+FileInputStream fs = new FileInputStream("bytestream.txt");
+// 这叫自定义缓冲区   一次读取一个缓冲区数组大小的数组
+byte[] buf = new byte[1024];
+int len;
+while ((len = fs.read(buf)) != -1){
+    System.out.println(new String(buf, 0, len));
+}
+
+另外一种方式，主要是用到了他里面的 获取文件字节大小的方法 available()
+// 输出流的新读取方式
+// 获取文件的字节数(英文只占一个字节，中文占两个)  fs.available()
+byte[] buf = new byte[fs.available()];
+fs.read(buf);
+System.out.println(new String(buf));
+
+fs.close();
 
 
-
-
-
+|- 输出流 缓冲区
+// 创建字节输出流对象，用于操作文件
+FileOutputStream fs = new FileOutputStream("bytestream2.txt");
+BufferedOutputStream bs = new BufferedOutputStream(fs);
+// 写数据，直接写入到了目的地中，所以不需要flush也就是不需要缓冲。缓冲区Buffer才会用到flush方法。
+bs.write("abc".getBytes());
+// 缓冲区需要flush
+bs.flush();
+// 关闭缓冲区
+bs.close();
 
 
 

@@ -11,9 +11,9 @@ public class FileWriterReaderDemo {
 
     private static final String LINE_SEPER = System.getProperty("line.separator");
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
 //        write();
-//        reader();
+        reader();
 //        copy();
 
 //        trycopy();
@@ -82,7 +82,7 @@ public class FileWriterReaderDemo {
          是把一次读一个字节，先放在这个数组里，等这个数组满1024，或者读到 -1 代表读完了。
          再把这个char[] 字节数组转为 字符串。完成读取过程。
          */
-        FileReader fr = new FileReader("demo1.txt");
+        FileReader fr = new FileReader("buf.txt");
         // 使用read(char[])读取文本文件数据，一般这数字就是1024，因为存储时就是按这大小来存的。
         char[] buf = new char[1024];
         // 将读到的字符存储到数组中，返回读取到的字符数量。

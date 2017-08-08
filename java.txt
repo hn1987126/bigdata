@@ -6,6 +6,18 @@
 3、父类有一个方法，如果子类里再有一个相同的，但是是prive私有的，则会出错。或者父亲和子类方法名参数名一致，但是返回值类型不一致也会编译错误，因为方法歧义。
 4、对象 print的时候，会打印哈希值出来，如果想打印的好看，在类中重写下toString方法来输出类的属性。
 5、Ascii码转为字符   (char)97   得到 b
+\r   的Asicc码是 13
+\n   的Asicc码是 10
+     比如 int a = 10; 可以直接这样比较 if (a == '\n'){}
+6、集合清空是 clear，StringBuffer和StringBuilder清空是 delete。
+7、java中字符用unicode码，中文用gbk码。全世界通用，两个字节表示全世界的文字。
+如果是a,b这种字符，会在他前面加上 8个0，最后是全世界两位。
+由于2个字节来装，太占空间了，后来产生了utf-8编码，有几个就占几个。utf-8里一个中文占3个字节
+8、字节(byte)，位(bit)，的概念
+1个字节也就是1个英文字符，gbk编码下1个中文是2字节，utf-8编码下1个中文是3个字节
+1个字节等于8位。
+1024个byte是 1kb
+char、byte、int对于英文字符，可以相互转化
 
 
 进程：正在进行中的程序
@@ -981,19 +993,149 @@ bs.close();
 
 
 
+键盘输入输出：
+----------------------------------------------------------------------------
+键盘本身就是一个标准的输入设备，java对于这种输入设备都有对应的对象。在System类(java.lang)中。
+InputStream in = System.in;
+这个 in 最好不要close，因为他是随着系统消失而消失，随着系统来而来。
+默认的输入输出设备都不需要关。如键盘和控制台。
+
+StringBuffer和StringBuilder是两个字符串容器。
+OutputStream os = System.out; //实际上他是 PrintStream类。
+System.in 和 System.out 都是字节流。要输出为文本，都需要转换器转换成字符流。
+
+键盘录入代码：
+----------------------------------------------------------------------------
+// 字节流
+InputStream is = System.in;
+int ch = 0;
+while ((ch = is.read()) != -1) {
+    System.out.println(ch + "--" + (char) ch);
+}
+// 这个标准输入输出流不需要关闭，会随着系统关而关，它只有一个，关了就没了。
+//is.close();
 
 
+把字节流 转为 字符流：
+----------------------------------------------------------------------------
+练习：键盘输入字符，回车后转为大写，当输入了over以后，结束输入:
+
+// 字节输入流
+InputStream is = System.in;
+// 字节流转为字符流的转换器，他是字符流的子类，也是装饰类
+// 如果是中文，占两个字节，所以如果直接用System.in输入中文一个字，会返回两个字符。
+// 而通过字符流输入一个中文汉字，他会去编码表里查表，查到后返回一个字符编码。
+InputStreamReader ir = new InputStreamReader(is);
+// 缓冲区
+BufferedReader br = new BufferedReader(ir);
+String line = null;
+while ((line = br.readLine()) != null) {
+    if ("over".equals(line)) {
+        break;
+    }
+    System.out.println(line.toUpperCase());
+}
 
 
+// 字节输出流 转为 字符输出流
+// 字符转字节
+InputStream is = System.in;
+// 字节流转为字符流的转换器
+InputStreamReader ir = new InputStreamReader(is);
+// 输入缓冲区
+BufferedReader br = new BufferedReader(ir);
+
+// 输出 字节流，输出到标准控制台。
+OutputStream os = System.out;
+// 这是为了把 最终显示到控制台的 字节流 转字符流。
+// 之前学过的FileWriter 是这个转换流的子类。所以写文件的时候不需要再转换一次，字节直接就以字符的方式写到文件了。
+OutputStreamWriter ow = new OutputStreamWriter(os);
+// 输出缓冲区
+BufferedWriter bw = new BufferedWriter(ow);
+
+String line = null;
+while ((line = br.readLine()) != null) {
+    if ("over".equals(line)) {
+        break;
+    }
+    bw.write(line.toUpperCase());
+    bw.newLine();
+    // 刷新才会显示出来
+    bw.flush();
+}
 
 
+简化代码  上面那么多行，省成下面这几行：
+----------------------------------------------------------------------------
+BufferedReader bufr = new BufferedReader(new InputStreamReader(System.in));
+BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(System.out));
+// 如果想不写到控制台，而是输出到文件中，只要修改上面那一行代码：BufferedWriter bufw = new BufferedWriter(new FileWriter("abc.txt"));
+//或者：BufferedWriter bufw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("abc.txt")));
+// 如果想从文本文件读内容写到控制台： 改一行  BufferedReader bufr = new BufferedReader(new InputStreamReader(new FileInputStream("abc.txt")));
+
+String line = null;
+while ((line = bufr.readLine()) != null) {
+    if ("over".equals(line)) {
+        break;
+    }
+    bufw.write(line.toUpperCase());
+    bufw.newLine();
+    // 刷新才会显示出来
+    bufw.flush();
+}
+
+转换流：
+----------------------------------------------------------------------------
+InputStreamReader  字节到字符的桥梁，解码
+OutputStreamWriter  字符到字节的桥梁，编码。
+流的操作规律：
+之所以要弄清楚这个规律，是因为流对象太多，开发时不知道用哪个对象合适。
+想要知道开发时用到哪些对象，只要通过四个明确即可：
+1、明确源和目的(汇)
+    源：InputStream   Reader
+    目的：OutputStream   Writer
+2、明确数据是否是纯文本数据。
+    源：是纯文本：Reader   否：InputStream
+    目的：是纯文本：Writer   否：OutputStream
+    到这里就可以明确需求中具体要用哪个体系。
+3、明确具体的设备：
+    源设备：
+        硬盘：File
+        键盘：System.in
+        内存：数组
+        网络：Socket流
+    目的设备：
+        硬盘：File
+        控制台：System.out
+        内存：数组
+        网络：Socket流
+4、是否需要其他额外功能。
+    4.1、是否需要高效（缓冲区）：加Buffer
+    4.2、转换。(字节流转字符流，字符流转字节流)
 
 
+字符编码的问题：
+----------------------------------------------------------------------------
+java中字符用unicode码，中文用gbk码。全世界通用，两个字节表示全世界的文字。
+如果是a,b这种字符，会在他前面加上 8个0，最后是全世界两位。
+由于2个字节来装，太占空间了，后来产生了utf-8编码，有几个就占几个。
 
+直接操作 FileWriter,FileReader就有缺陷，他们不能指定编码，只能用操作系统默认的编码如gbk。
+所以需要转换器，OutputStreamWriter, InputStreamReader。他们可以指定编码。
+他们的构造函数里 第二个参数可以指定编码。
+字符流 FileWriter和 FileReader 其实，是对 转换器 进行了一层封装，也就是说：
+new FileWriter("a.txt")  <===>   new OutputStreamWriter(new FileOutputStream("a.txt"));
+这两个等价。
 
+但是 后者可以指定编码：
+new OutputStreamWriter(new FileOutputStream("a.txt"), "utf-8");
+用utf-8以后，文件的大小就会节省。一个文件他的大小，就是这个字符数来算的，如有10个英文字符，他的大小就是10个字节。
+字符流那Reader类FileReader，可以用char[] 来read()。
+字节流那Reader类FileIntream，只能用byte[] 来read()。
 
-
-
+什么时候使用转换流：？
+1、源或目的对应的设备是字节流，但是操作的却是文本数据，可以使用转换作为桥梁，提高对文本操作的便捷。
+2、一旦操作文本涉及到具体的指定编码表时，必须使用转换流。
 
 
 

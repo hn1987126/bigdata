@@ -1412,8 +1412,27 @@ SequenceInputStream sis = new SequenceInputStream(en);
 其他部分与原来一致。
 
 
+练习：切片
+----------------------------------------------------------------------------
+src/main/java/cn/jhsoft/study/iostream/SplitFileDemo.java    把大文件切成小切片
+src/main/java/cn/jhsoft/study/iostream/MergeFileDemo.java    把小切片合并成文件
 
 
 
+ObjectOutputStream、 ObjectInputStream  对象流  （java.io包下的类）
+----------------------------------------------------------------------------
+对象的输入输出流，需要那对象 实现序列化接口，implements Serializable(这个称为标记接口)
+ObjectOutputStream 对象有 writeObject 方法，写个对象进去
+存储对象的文件名  都是   xxx.object
+这个是对一些特定的对象使用，比如数据库连接对象等，他的功能仅仅是将内存上的堆内存数据放到硬盘上。
 
+序列化：
+ObjectOutputStream obs = new ObjectOutputStream(new FileOutputStream("abc.object"));
+obs.writeObject(new Person("宫涛", 32));
+obs.close();
 
+对象反序列化：
+ObjectInputStream ois = new ObjectInputStream(new FileInputStream("abc.object"));
+Person p = (Person) ois.readObject();
+System.out.println(p.getName()+"--"+p.getAge());
+ois.close();

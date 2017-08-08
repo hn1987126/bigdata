@@ -1,9 +1,11 @@
 package cn.jhsoft.study.bean;
 
+import java.io.Serializable;
+
 /**
  * Created by chen on 2017/8/6.
  */
-public class Person {
+public class Person implements Serializable {
 
     private String name;
     private int age;

@@ -9,7 +9,7 @@ import java.net.Socket;
  * 需求：上传文本文件
  * 服务器端给上传成功的回馈
  */
-public class UploadClient {
+public class UploadTxtClient {
 
     public static void main(String[] args) throws IOException {
 
@@ -28,6 +28,10 @@ public class UploadClient {
         // 接收服务器消息的流
         BufferedReader br1 = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         System.out.println(br1.readLine());
+
+        socket.close();
+        br.close();
+
     }
 
 }

@@ -7,7 +7,7 @@ import java.net.Socket;
 /**
  * Created by chen on 2017/8/9.
  */
-public class UploadServer {
+public class UploadTxtServer {
 
     public static void main(String[] args) throws IOException {
 

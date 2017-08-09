@@ -7,8 +7,8 @@ import java.io.Serializable;
  */
 public class Person implements Serializable {
 
-    private String name;
-    private int age;
+    private transient String name;
+    private static int age;
 
     public Person(){
 

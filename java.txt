@@ -9,6 +9,7 @@
 \r   的Asicc码是 13
 \n   的Asicc码是 10
      比如 int a = 10; 可以直接这样比较 if (a == '\n'){}
+     iso8859-1 是拉丁语表。
 6、集合清空是 clear，StringBuffer和StringBuilder清空是 delete。
 7、java中字符用unicode码，中文用gbk码。全世界通用，两个字节表示全世界的文字。
 如果是a,b这种字符，会在他前面加上 8个0，最后是全世界两位。
@@ -20,6 +21,9 @@
 char、byte、int对于英文字符，可以相互转化
 
 9、整数在内存中占4个字节。
+10、端口号 是0-65535之间的数字，0-1024之间的端口系统在用，我们的应用最好不要用这些端口。
+11、192.168.31.255   这最后一位是255的，是代表广播地址，往这个地址上发信息，会往所有  192.168.31.1 到时 192.168.31.254 之间的ip发信息。
+
 
 
 进程：正在进行中的程序
@@ -1425,6 +1429,7 @@ ObjectOutputStream、 ObjectInputStream  对象流  （java.io包下的类）
 ObjectOutputStream 对象有 writeObject 方法，写个对象进去
 存储对象的文件名  都是   xxx.object
 这个是对一些特定的对象使用，比如数据库连接对象等，他的功能仅仅是将内存上的堆内存数据放到硬盘上。
+这个不会写静态的变量进去，只会写非静态的。
 
 序列化：
 ObjectOutputStream obs = new ObjectOutputStream(new FileOutputStream("abc.object"));
@@ -1436,3 +1441,332 @@ ObjectInputStream ois = new ObjectInputStream(new FileInputStream("abc.object"))
 Person p = (Person) ois.readObject();
 System.out.println(p.getName()+"--"+p.getAge());
 ois.close();
+
+
+ObjectOutputStream、 ObjectInputStream  对象流 的 实体类：bean类：
+----------------------------------------------------------------------------
+###############################  transient关键字(短暂的瞬间的)  ###############################
+如果非静态的变量，不想写进去到硬盘中。可以加 transient 关键词，这个词的意思是 短暂的，瞬间的。
+完全不影响对象，只不过写不到硬盘上而已。
+class Person{
+    private transient String name;
+    private static int age;
+}
+
+
+
+RandomAccessFile   随机访问文件(java.io.RandomAccessFile包)   它的父类是 java.lang.Object
+----------------------------------------------------------------------------
+它并不是io体系中的子类。它是 java.lang.Object下的。
+
+特点：
+1、该对象既能读，又能写。只能操作文件，包括文本文件和媒体文件。
+2、该对象内部维护一个byte数组，并通过指针可以操作数组中的元素。
+3、可以通过getFilePointer方法获取指针的位置，和通过seek方法设置指针的位置。
+4、其实该对象就是将字节输入流和输出流进行了封装。
+5、该对象的源或目的只能是文件，通过构造函数就可以看出。
+6、构造函数里第一个参数是传File，第二个参数是传个mode，可以选r或者rw，也就是读和读写。
+7、如果文件不存在则创建，如果文件存在则不创建，不会覆盖，其他的输出流是覆盖。
+
+ * 随机访问文件，要求数据有规律，也就是自己知道它里面有什么。
+ * 如果没规律的，此类不适用。
+ * 比如知道里面存的是姓名和年龄，如果是姓名可能是都是两个字，年龄反正是int的都是占4个字节，所以无所谓多大年纪
+ * 或者如果想要有规律，可以用16个字节来表示姓名，这样每个人都是16个，不够的用空格补
+ * 这样就有规律了，自己就可以算出来指针的位置，可以随机地去读和写了。
+ *
+ * 如果是有多线程操作同一文件，那这个类就特别适合了，每个线程去写一段。可以实现多个线程同时往一个文件写数据。
+ * 断点续传，也是用的它。
+
+
+代码：：：
+写数据：
+
+RandomAccessFile raf = new RandomAccessFile("ab.txt", "rw");
+// 往指定位置写入数据
+// 如果没有指定位置，又会从0角标开始写数据。新的0角标覆盖原来的0角标，新的1角标覆盖原来的1角标。
+// 其它没有覆盖到的位置的数据不会动。
+raf.seek(5*13);
+
+raf.write("陈义".getBytes());
+raf.writeInt(20);
+raf.close();
+
+
+读数据：
+RandomAccessFile raf = new RandomAccessFile("ab.txt", "r");
+byte[] buf = new byte[6];   // 取6个字节，也就是中文的二个字
+raf.read(buf);
+System.out.println(new String(buf));
+int age = raf.readInt();   // 取完上面的姓名，指针往下移，取一个整数，也就是再取4个字节，那4个字节里存的就是一个int类型的数据
+// 通过seek设置指针的位置，这就叫随机访问，想从哪个位置读就从哪个位置读。
+raf.seek(1*10);
+// 获取当前指针所在的位置
+raf.getFilePointer();
+raf.close();
+
+
+管道流 PipedInputStream 和 PipedOutputStream
+----------------------------------------------------------------------------
+输入输出可以直接进行连接，通过结合多线程使用。
+输出流会一直等，等待输入流里有数据了，就会输出来。不然就一直等，会死锁。所以需要多线程。
+代码参见：src\main\java\cn\jhsoft\study\iostream\PipedStreamDemo.java
+
+两个管道(输入输出)相连：：
+PipedInputStream pi = new PipedInputStream();
+PipedOutputStream po = new PipedOutputStream(pi);
+// 上面是通过构造方法来连接两个管道，或者通过connect方法连接两个管道
+// po.connect(pi);
+new Thread(new Input(pi)).start();
+new Thread(new Output(po)).start();
+
+
+
+操作基本数据类型的  流  DataInputStream、DataOutputStream
+----------------------------------------------------------------------------
+它是一个包装类，初始化的时候，还是要传  FileInputStream对象进去。它只是包装原来的 FileInputStream等 类
+
+写数据：：
+DataOutputStream dos = new DataOutputStream(new FileOutputStream("utf.txt"));
+// utf修改版的，存进去时会自动加标头，别的人解不开，只能用他自己提供的方法去解开
+dos.writeUTF("你好");
+// 还提供了writeInt等一堆方法。
+dos.close();
+
+读数据：：
+DataInputStream dis = new DataInputStream(new FileInputStream("utf.txt"));
+String str = dis.readUTF();
+System.out.println(str);
+dis.close();
+
+
+操作字节数组的  流  ByteArrayInputStream、ByteArrayOutputStream
+----------------------------------------------------------------------------
+他们都是用来   操作 源 和 目的 都是内存的对象。
+操作的是长度可变的数组，从内存中来 到 内存中去。
+
+ByteArrayOutputStream 对象，不需要关闭，关闭也无效，因为他只在内存中操作，不会操作资源。
+可以使用 toByteArray()和toString()获取数据。
+
+ByteArrayInputStream 包含一个内部缓冲区，它是操作源的，必须有源，
+所以在它初始化的时候，需要传个字节数组进去。
+
+代码：：：
+ByteArrayInputStream bis = new ByteArrayInputStream("abcdefa".getBytes());
+ByteArrayOutputStream bos = new ByteArrayOutputStream();
+
+int ch = 0;
+while ((ch = bis.read()) != -1){
+    bos.write(ch);
+}
+System.out.println(bos.toString());
+
+// 里面还有个writeTo(OutputStream out) 方法，把流写到另外一个输出流里去。
+bos.writeTo(new FileOutputStream("s.txt"));
+
+应用：：
+如果源是内存的一些操作，可以单用 ByteArrayInputStream
+如果目的是内存的一些操作，可以单用 ByteArrayOutputStream
+
+
+
+操作字符数组的  流  CharArrayInputStream、CharArrayOutputStream
+----------------------------------------------------------------------------
+CharArrayReader cr = new CharArrayReader("abcd".toCharArray());
+字符串转char数组   toCharArray();
+
+
+操作字符串的  流  StringReader、StringWriter
+----------------------------------------------------------------------------
+StringReader sr = new StringReader("test");
+
+
+编码::
+----------------------------------------------------------------------------
+String str = "你好";
+byte[] buf = str.getBytes("utf-8");  // 编码   得到 -60-29-70-61-31-11，计算机硬盘上实际上存的就是这个，只不过记事本解析出来后，解析成了 中文，是下面这个解码的功劳
+String s1 = new String(buf, "utf-8"); // 解码   把 -60-29-70-61-31-11 解成  你好
+如果用utf-8编的，然后用错了用 iso8859去解的，会得到一堆 ??，这时再用iso8859去编一次，又会重新得到 -60-29等这样的数字
+再用utf-8去解。还是可以解的回来。
+但如果上面的换种情况，用gbk编的，用utf-8去解，会解不出来，得到??，utf-8再给他编下码成了 -17-65-67 这代表无效字符。
+再用gbk解，是解不出来的。
+为什么iso8859可以而utf-8不行，因为iso8859是单字节编码解码的，并且他不识别中文，所以他能还原得回来。
+而utf-8他自己加工了一次，再解就解不出来。iso8859是，不做处理。所以最终能解出来。
+
+
+练习：：中文截取
+/**
+ * 截取中文字符串
+ * @param str  要截取的字符串
+ * @param len 截取的长度
+ */
+private static String testsubstr(String str, int len) throws Exception {
+    byte[] buf = str.getBytes("utf-8");
+
+    // 记录想截取的这一段之前 有多少个负数
+    int count = 0;
+    for (int i = len-1; i >= 0 ; i--) {
+        if (buf[i] < 0){
+            count ++;
+        }
+    }
+
+    // 如果负数刚好是3和3的倍数，说明截取的len刚好够中文，所以直接返回相应的长度
+    if (count%3 == 0){
+        return new String(buf, 0, len, "utf-8");
+    }else if (count % 3 == 1){// 如果负数的数量为1个或4个，那就需要返回的结果里减掉1个长度
+        return new String(buf, 0, len-1, "utf-8");
+    }else{// 如果负数的数量为2个或5个，那就需要返回的结果里减掉2个长度
+        return new String(buf, 0, len-2, "utf-8");
+    }
+}
+
+对于utf8编码，如果是英文和数字的，是占一个字节，那它是以 用0 开头 的8位表示如 0xxxxxxx
+对于中文，是3个字节，第一个字节是 1110 xxxx,第二个是 10 xxxxxx， 第三个是 10 xxxxxx
+对于其它2个字节的情况，第一个字节是 110 xxxxx,第二个是 10 xxxxxx
+
+
+
+----------------------------------------------------------------------------
+------------ 网络编程  (java.net包里)
+----------------------------------------------------------------------------
+类InetAddress，表示互联网IP地址。  InetAddress.getLocalHost() 获取本地主机，返回IP对象。
+//获取本地主机IP地址对象
+InetAddress ip = InetAddress.getLocalHost();
+// 获取其它主机的ip地址对象
+ip = InetAddress.getByName("jd.com");
+// IP地址
+System.out.println(ip.getHostAddress());
+// 主机名，会根据ip去解析
+System.out.println(ip.getHostName());
+
+
+
+DatagramSocket类
+----------------------------------------------------------------------------
+Socket是网络通信的两端。网络服务端点。网络通信就是Socket通信。
+UDP传输：
+java.net.DatagramSocket  既然接收也能发送
+java.net.DatagramPacket  数据报包。构造方法里，要传 SocketAddress对象的构造方法，都是发送数据。
+
+
+创建UDP传输的发送端：：
+----------------------------------------------------------------------------
+思路：
+1、建立udp的socket服务。（使用DatagramSocket对象）
+2、将要发送的数据封装到数据包（DatagramPacket）中。
+3、通过udp的socket服务将数据包发送出去。
+4、关闭socket服务。
+
+代码：：
+// 1、udp socket服务，使用DatagramSocket对象，
+// 如果在这构造方法里写个端口进去，如8888，是代表以这个端口来发送，如果不指定，则随机。
+DatagramSocket ds = new DatagramSocket();
+
+// 2、将要发送的数据封装到数据包中。
+String str = "udp传输演示：宫海涛";
+// 使用DatagramPacket将数据封装到该对象包中。
+byte[] buf = str.getBytes();
+// ip 如果改为 10.12.128.255代表它是广播地址，ip在 10.12.128.1到 10.12.128.254的人都能接收到，当然是用他们的10000端口来接
+InetAddress ip = InetAddress.getByName("10.12.128.161");
+DatagramPacket dp = new DatagramPacket(buf, buf.length, ip, 10000);
+
+// 3、通过udp的socket服务将数据包发送出去，使用send方法。
+ds.send(dp);
+
+// 4、关闭资源
+ds.close();
+
+
+
+
+创建UDP传输的接收端：：
+----------------------------------------------------------------------------
+思路：
+1、建立udp的socket服务。（使用DatagramSocket对象）
+2、创建数据包（DatagramPacket），用于存储接收到的数据，方便用数据包对象的方法解析这些数据。
+3、使用socket服务的receive方法将接收的数据存储到数据包中
+4、通过数据包的方法解析数据包中的数据。
+5、关闭资源。
+
+代码：：
+// 1 建立udp的socket服务，并指定监控的端口
+DatagramSocket ds = new DatagramSocket(10000);
+
+// 2 创建数据包
+byte[] buf = new byte[1024];
+DatagramPacket dp = new DatagramPacket(buf, buf.length);
+
+// 3,使用接收方法将数据存储到数据包中
+ds.receive(dp); // 阻塞式的
+
+// 4,通过数据包对象的方法，解析其中的数据，比如，地址，端口，数据内容
+String ip = dp.getAddress().getHostAddress();// 发送端的地址
+int port = dp.getPort();// 不是本服务端的端口，是发送端的端口
+// dp.getLength()是数据包数据的长度，数据包自己知道
+String content = new String(dp.getData(), 0, dp.getLength());
+System.out.println(ip+":"+port+":"+content);
+
+// 5,关闭资源
+ds.close();
+
+
+
+UDP练习：：：：
+----------------------------------------------------------------------------
+群聊聊天室：用多线程处理。代码如下：
+src\main\java\cn\jhsoft\study\net\ChatDemo.java
+
+
+
+
+TCP Socket类
+--------------------------------------------------------------------------------------------------------------------------------------------------------
+----------------------------------------------------------------------------
+分两个类 不像UDP里的DatagramSocket既然接收也能发送，也就是既然是客户端用也能服务端用。
+Socket类是客户端套接字   java.net.Socket
+ServerSocket类是服务端套接字  java.net.ServerSocket
+
+
+Tcp传输【客户端发数据到服务端】，【客户端】建立的过程：：
+----------------------------------------------------------------------------
+1、Socket类的两个常用构造方法：用来建立连接
+new Socket(InetAddress address, int port); // 对方的IP地址和端口
+new Socket(String host, int port);  // 或者这样建立，简单
+
+2、如果连接建立成功，说明数据传输通道已建立，这个通道就是输入输出流。
+专业叫 socket流，也叫网络IO流。socket流是底层建立的，不需要我们建立，它里面既有输入也有输出。
+想要输入流对象或输出流对象，可以找Socket来获取。它是字节流。
+可以通过 Socket对象的 getOutputStream() 和 getInputStream() 来获取字节流
+
+3、使用输出流( getOutputStream )，将数据写出，因为是咱们自己机器写出去到网络上。
+4、关闭资源。
+
+代码：：
+Socket sc = new Socket("10.12.128.161", 10000);
+OutputStream outputStream = sc.getOutputStream();
+outputStream.write("你好宫海涛".getBytes());
+sc.close();
+
+
+
+Tcp传输【服务端接收客户端的数据】，【服务端】建立的过程：：
+----------------------------------------------------------------------------
+1、Socket服务端用 ServerSocket类。它的构造方法：
+new ServerSocket(10000); //指定端口号
+2、获取连接过来的客户端对象。(可能很多客户端连过来，本次处理的是哪个？3,4步都是征对这个客户端处理)
+3、通过客户端对象获取socket流，读取客户端发来的数据，并打印在控制台上。
+4、关闭资源，需要关两个资源：客户端的和服务端的。
+
+
+
+
+
+
+
+
+
+
+
+
+
+

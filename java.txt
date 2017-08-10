@@ -1797,6 +1797,103 @@ src/main/java/cn/jhsoft/study/nettcpsocket/TransServer.java
 需求：上传文本文件，并且服务端给上传成功的回馈
 src/main/java/cn/jhsoft/study/nettcpsocket/UploadClient.java
 src/main/java/cn/jhsoft/study/nettcpsocket/UploadServer.java
+改进了一版，服务端用多线程来实现。
+while (true) {
+    Socket s = ss.accept();
+    // 多线程接收多客户端socket
+    new Thread(new UploadImageTask(s)).start();
+}
+// 上面的while循环，如果是一直在空转，系统会爆掉，因为里面有运算，会占用机器资源。
+// 但如果里面有阻塞函数(如ss.accept()，还有read()也是阻塞式函数,如果读不到东西就一直在等)，那就不会爆，因为那里会在等待，并不占系统资源。
+
+
+
+
+自己写代码模拟 Tomcat，让浏览器来访问自己的Tomcat（实际上是一个ServerSocket）
+----------------------------------------------------------------------------
+访问地址：http://127.0.0.1:8089/
+代码：src\main\java\cn\jhsoft\study\nettcpsocket\MyTomcat.java
+
+
+
+
+自己写代码模拟 浏览器，去访问真正Tomcat服务器的网页
+----------------------------------------------------------------------------
+代码：src\main\java\cn\jhsoft\study\nettcpsocket\MyBrowser.java
+
+
+
+
+
+
+URL  统一资源定位符  java.net.URL 包，它指向互联网资源，可以是文件可以是目录
+----------------------------------------------------------------------------
+URI  统一资源标识符。url是一种特殊的uri，uri还包括如jdbc连接这样的，还有相对的路径等。
+URN  统一资源名称。如mailto，news等
+
+方法代码：：
+URL url = new URL("http://127.0.0.1:8080/web-ssm/index.jsp?a=1&b=2");
+System.out.println("协议:"+url.getProtocol());
+System.out.println("主机名:"+url.getHost());
+System.out.println("端口:"+url.getPort());
+System.out.println("页面+参数:"+url.getFile());
+System.out.println("页面地址:"+url.getPath());
+System.out.println("参数:"+url.getQuery());
+
+// 获取url连上去的这个socket 服务端返回来的 流
+InputStream in = url.openStream();
+byte[] buf = new byte[1024];
+int len = 0;
+while ((len = in.read(buf)) != -1) {
+    System.out.println(new String(buf, 0, len));
+}
+
+// 获取url对象的url连接器对象，它是将连接封装成了对象
+// 这个对象就是java中内置的可以解析的具体协议对象 + socket
+// 上面的 url.openStream() 就是对 conn.getInputStream() 进行了一层包装。
+URLConnection conn = url.openConnection();
+// 获取头信息里的 Content-Type
+System.out.println(conn.getHeaderField("Content-Type"));
+
+// 通过 URLConnection 来获取输入流   conn.getInputStream()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

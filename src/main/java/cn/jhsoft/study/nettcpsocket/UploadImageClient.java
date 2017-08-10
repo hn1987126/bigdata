@@ -10,7 +10,7 @@ public class UploadImageClient {
 
     public static void main(String[] args) throws IOException {
 
-        Socket socket = new Socket("192.168.31.139", 10007);
+        Socket socket = new Socket("10.12.128.161", 10007);
         FileInputStream fi = new FileInputStream("readme.md");
         OutputStream out = socket.getOutputStream();
         byte[] buf = new byte[1024];

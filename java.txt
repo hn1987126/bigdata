@@ -1839,6 +1839,7 @@ System.out.println("端口:"+url.getPort());
 System.out.println("页面+参数:"+url.getFile());
 System.out.println("页面地址:"+url.getPath());
 System.out.println("参数:"+url.getQuery());
+url.openStream();  // 获取服务端返回的 InputStream流。
 
 // 获取url连上去的这个socket 服务端返回来的 流
 InputStream in = url.openStream();
@@ -1859,23 +1860,203 @@ System.out.println(conn.getHeaderField("Content-Type"));
 
 
 
+----------------------------------------------------------------------------
+------------ 正则表达式  java.util.regex包中的 Pattern类
+----------------------------------------------------------------------------
+正则表达式主要用来操作字符串，它是通过一些特定的符号来体现的。
+Java中，字符串String中有个方法 ： matches(String regex) 可以接受一个规则参数，返回布尔值。
+这个规则 就是正则表达式。如：
+String qq = "12345678";
+String regex = "[1-9][0-9]{4,14}";
+boolean b = qq.matches(regex);
+System.out.println(b);
+
+
+规则：：
+
+字符
+[abc]        a、b、c 三个中的一个。  简单类
+[^abc]       任何字符，除了a,b,c  否定
+[a-zA-Z]     a到z或A到Z，包括两头  范围
+[a-d[m-p]]   a到d或m到p，[a-dm-p]  并集
+[a-z&&[def]]   a-z与def这三个  取交集
+[a-z&&[^bc]]    a-z除了b和c，    相当于[ad-z]  减去
+[a-z&&[^m-p]]   a-z而且不是m-p     相当于[a-lq-z]  减去
+
+预定义字符
+.     任何字符（与行结束符可能匹配也可能不匹配）
+\d    数字
+\D    非数字
+\s    空白字符 [\t\n\x0B\f\r]
+\S    非空白字符
+\w    数字和大小写字母下划张
+\W    上个里取反
+
+边界匹配器
+^    行的开头
+$    行结尾
+\b   单词边界
+
+Greedy数量词
+?        一次或一次也没有
+*        零次或多次
++        一次或多次
+{n}      n次
+{n,}     至少n次
+{n,m}    n到m次，至少n次，不超过m次
+
+Reluctant数量词
+在 Greedy数量词 的基础上加个 ?，如??,*?,+?
+
+Possessive数量词
+在 Greedy数量词 的基础上加个 +，如?+,*+,++
+
+正则表达式对字符串的常见操作：
+1、匹配，其实就是String类中的matches方法 。
+2、切割，其实就是String类中的split函数。
+
+String str = "zhangsan   ab1        ab2";
+// 用一个或多个空格来 切割
+String[] names = str.split(" +");
+for (String name:names){
+    System.out.println(name);
+}
+
+// . 是正则里的关键词，用它来切割的时候，需要转义。
+String str1 = "zhangsan.ab1.ab2";
+String[] names1 = str1.split("\\.");
+for (String name:names1){
+    System.out.println(name);
+}
+
+组的概念，按组来切割。
+--------------------------------------------------------------------------------------------------------
+String str2 = "zhangsan####ab1&&&ab2";
+// 叠字,按重复的字符来分隔 括号括起来的是组(.)，正则会把他编号为1,要取他，需要\\1
+// 如果没有括号，那就没有组，\\1 就没有意义
+// 复杂组 如 ((A)(B(C))) 从左括号看，去数组，第一个左括号是第1组，第二个左括号是第2组，类推
+// 组0 代表整个表达式。
+String[] names2 = str2.split("(.)\\1+");
+for (String name:names2){
+    System.out.println(name);
+}
+
+
+3、替换
+其实使用的就是String类中的replaceAll方法
+String str2 = "zhangsan####ab1&&&ab2";
+// 叠词操作，把多个重复的词，替换为一个 感叹号。与切割时的用法一样。
+str2 = str2.replaceAll("(.)\\1+", "!");
+System.out.println(str2);
+
+// 把匹配到的 重复的字母替换为一个它自己，如4个#替换为一个#, 多个&替换为1个&
+// 第二个参数里使用第一个参数里的正则的结果，$1,$2等。
+str2 = str2.replaceAll("(.)\\1+", "$1");
+System.out.println(str2);
+
+// 替换手机号中间的*
+String str = "15800001111";
+str = str.replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2");
+System.out.println(str);
+
+4、获取
+替换只能用 java.util.regex.Pattern 和 java.util.regex.Matcher 操作了。
+上面三个，用字符串操作的，实际上底层也还是用这种办法。
+这里面就有  matchers()  和 replaceAll() 方法 。
+
+// 要得到三个字母组成的单词
+String str = "da jia hao,ming tian bu fang jia!";
+// Pattern是正则表达式对象      java.util.regex.Pattern
+// Matcher是匹配器对象   java.util.regex.Matcher
+/**
+ 获取
+    将正则规则进行对象的封装
+ Pattern p = Pattern.compile("a*b");
+ // 通过正则对象的matcher方法 字符串相关联。获取要对字符串操作的匹配器对象Matcher
+ Matcher m = p.matcher("aaaaab");
+ // 通过Matcher匹配器对象的方法 对字符串进行操作
+ boolean b = m.matchers();    m.find();   m.group()   等
+ */
+
+String regex = "\\b[a-z]{3}\\b";
+
+// 1.将正则封装成对象
+Pattern p = Pattern.compile(regex);
+// 2.通过正则对象获取匹配器对象
+Matcher m = p.matcher(str);
+// 3.使用Matcher对象的方法 对字符串进行操作
+// 既然要获取三个字母组成的单词，那就查找 find()
+System.out.println(str);
+while(m.find()){
+    System.out.println(m.group());  // 获取匹配的子序列
+    System.out.println(m.start()+":"+m.end());
+}
 
 
 
+练习：：
+练习一：治口吃：
+String str = "我我...我...我我我要...要要要要...要要要要..学学学...编编程";
+// 1.将字符串中的.去掉。用替换
+str = str.replaceAll("\\.", "");
+// 2.替换叠词
+str = str.replaceAll("(.)\\1+", "$1");
+System.out.println(str);
+
+练习二：IP排序
+String str = "192.168.10.34  127.0.0.1   3.3.3.3    105.70.11.55";
+
+// 1.为了让ip可以按照字符串顺序比较，只要让ip的每一段位数相同。
+// 所以，补零，按照每一位所需做多0进行补充，每一段都加两个0
+str = str.replaceAll("(\\d+)", "00$1");
+// 然后每一段保留数字3位
+str = str.replaceAll("(\\d{0,2})(\\d{3})", "$2");
+// 再用TreeSet排序，它存储的时候就有顺序
+TreeSet<String> ts = new TreeSet<>();
+
+// 2.将ip地址切出，按空格出现1次或多次
+String[] ips = str.split(" +");
+for (String ip : ips) {
+    ts.add(ip);
+    System.out.println(ip);
+}
+for (String ip : ts){
+    // 0*后面跟的数字，取那数字，就适用于505这种，没有0后面就是数字，要得到那数字
+    // 如果是 005，那就得到5，适合解决那种中间是 0 的正常情况，只要去掉以0开头的情况
+    System.out.println(ip.replaceAll("0*(\\d+)", "$1"));
+}
 
 
+练习三：网络爬虫，爬取邮箱
+List<String> list = new ArrayList<>();
 
+// 1.读取源文件
+//BufferedReader bufr = new BufferedReader(new FileReader("email.html"));
+// 上面是获取本地资源，接下来获取网页资源
+URL url = new URL("http://www.cnitpm.com/pm1/46030.html");
+// url.openStream()获取的是InputStream，要操作文本，需要转化。
+BufferedReader bufr = new BufferedReader(new InputStreamReader(url.openStream()));
 
+// 2.对读取的数据进行规则的匹配。从中获取符合规则的数据
+String regex = "\\w+@[a-zA-Z0-9]+(\\.\\w+)+";
+Pattern pattern = Pattern.compile(regex);
 
+String line = null;
+while ((line = bufr.readLine()) != null) {
+    // 通过正则对象获取匹配器对象
+    Matcher m = pattern.matcher(line);
+    // 循环找 m.find() ，找到了就取出找到的结果 m.group()
+    while (m.find()){
+        list.add(m.group());
+    }
+}
 
+// 3.将符合规则的数据存储到集合中
+for (String str : list){
+    System.out.println(str);
+}
 
-
-
-
-
-
-
-
+bufr.close();
 
 
 

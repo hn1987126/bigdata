@@ -367,7 +367,7 @@ String这个类，本身就有hashCode()方法 和 equals()比较内容是否相
 会根据String自身的特点，进行hash算法。
 自己定义的类，因为是继承了Object，也会有hashCode方法和equals方法，如人类，里面有姓名和年龄，
 如果想只根据姓名来判断是同一个人，可以重写父类Object的hashCode方法和equals方法。
-Object父类的hashCode方法，是native 这个修饰符修饰的，代表着他底层是调 原生态方法，方法对应的实现不是在当前文件，而是在用其他语言（如C和C++）实现的文件中
+Object父类的hashCode方法，是native 这个修饰符修饰的，代表着他底层是调 原生态方法，方法对应的实现不是在当前文件，而是在用其他语言（如C和C++）实现的文件中。有这个native就可以省略abstract
 
 **** 重点注意：：：
 数据结构不一样，判断元素是否相同(如a.contains(b)和 remove(b))【remove的时候也得先去查找，再删除】 等也不相同：
@@ -2394,7 +2394,7 @@ System.out.println(di.NUM);
     3、抽象类的继承，是is a关系，在定义该体系的基本共性内容。
        接口的实现是 like a 关系，在定义体系额外功能。
 
-########## 接口 通常都以  __able 结尾。 接口里的方法都是public的。
+########## 接口 通常都以  __able 结尾,able的意思是 【可】 。 接口里的方法都是public的。
 ########## 由类定义的变量，叫类类型变量。接口定义的变量，叫接口变量，也叫接口型的引用。
 用于接收（指向）接口的子类(实现类)对象。
 如 USB接口， 【USB usb】 这个usb就是接口变量。
@@ -2482,7 +2482,7 @@ useUSB(new Upan());  // 主函数里，使用规则，使功能扩展了。
 内部类
 --------------------------------------------------------------------------------------------------------
 将一个类定义在另一个类里面，称为内部类，又称嵌套类、内置类。
-内部类编译完，会有两个字节码文件。
+内部类编译完，会有两个字节码文件。外面的类一个class文件，内部类一个class文件，文件名是【外部类名$内部类名】。
 
 内部类访问特点：
 1、内部类可以直接访问外部类中的成员。
@@ -2624,35 +2624,141 @@ obj.show();
 
 
 
+Ojbect类
+--------------------------------------------------------------------------------------------------------
+所有类都有的方法：
+clone()
+finalize()   //垃圾回收
+Class getClass()  //返回当前类所属字节码文件对象。类创建时如 Person p ，首先在堆内存中产生了一个Person.class的字节码文件对象。后面的new Person()就是根据这个字节码文件产生了。
+int hashCode()  // 该对象的哈希码值，他内部也是调操作系统本地的 public native int hashCode();是将对象的内部地址转换成一个整数
+toString()   //  类名@hashCode这个整数的十六进制(Integer.toHexString(hashCode))。    是这么得到结果的：：：  this.getClass().getName()+"@"+Integer.toHexString(this.hashCode);
+wait()
+notify()
+equals(Object obj)
+
+要比较两个类是否相等，应该在实体类中，重写父类的equals方法。在里面自己定义规则，比如用年龄来比较。返回true。
+hashSet和mapSet里看元素是否重复，首先看hasecode再看equals
+treeset和treemap 主要是看comparable接口里的compareTo方法 或 实现了compartor接口的 compare方法的类。
+Class getClass() 里返回值，是Class类型的，他也是个对象，可以取到他里面的getName等信息【也就是类名】。
+println(person1) 其实就是调用 person1.toString(); 并打印出来。
 
 
 
+异常 Exception
+--------------------------------------------------------------------------------------------------------
+异常是在运行时期发生的不正常情况。
+在java中用类的形式对不正常情况进行了描述和封装对象。
+描述不正常的情况的类，就称为异常类。
+以前正常流程代码和问题处理代码相结合，现在将正常流程代码和问题处理代码分离提高阅读性。
+其实异常就是java通过面向对象的思想将问题封装成对象，用异常类对其进行描述。
+不同的问题用不同的类进行具体的描述，比如角标越界，空指针等。
+问题很多，意味着描述的类也很多，将其共性进行向上抽取，就形成了异常体系。
+
+最终 问题(不正常情况)就分成了两大类：
+Throwable：【可抛】无论是error还是异常，问题。问题发生就应该可以抛出，让调用者知道并处理。该体系的特点就在于Throwable及其所有的子类都具有可抛性。
+    |--1、一般不可处理的。Error类表示
+          特点：是由jvm抛出的严重性的总是。已经影响到程序的运行了。这种问题一般不针对性处理，直接修改程序。
+               如类不存在(java.lang.NoClassDefFoundError)，内存溢出(java.lang.OutOfMemoryError)。
+
+    |--2、可处理的。Exception类表示
+        异常(Exception)的分类：
+        2.1、编译时被检测异常，只要是Exception和其子类都是(除了特殊子类RuntimeException体系)。
+             这种总是一旦出现，希望在编译时就进行检测，让这种问题有对应的处理方式。
+             这样的总是就都可以针对性的处理。
+
+        2.2、编译时不检测异常(运行时异常)，就是Exception中的  RuntimeException及其子类体系。
+             这种问题的发生，无法让功能继续，运算无法进行，更多是因为调用者的原因导致的，或引发了内部状态的改变导致的。
+             这种问题一般不处理，直接编译通过，在运行时让调用者调用时的程序强制停止。让调用者对代码进行修正。
+             这种在开发时更常用 。 这种异常就不需要再继续往外抛【申明 throws】，也不需要try catch，直接程序退出就ok了。
 
 
+可抛性到底是什么？怎么体现可抛性？
+其实就是通过两个关键字来体现的。throws 和throw。凡是可以被这两个关键字所操作的类和对象都具备可抛性。
+【throw new MyException()】  这叫【申明异常】。
 
+Throwable类是java语言里异常类的超类  java.lang.Throwable，直接已知子类：Error和Exception
+Error类的子类们：
+    Error类只有构造方法，自己没有特有的方法。
 
+Exception类的子类们：
+    除构造方法，也没有自己的特有方法。
 
+异常体系的特点：
+    子类的后缀名都是用其父类名作为后缀，阅读性很强。
 
+异常提示：
+    at 类名.方法名<文件名:行号>
 
+throw抛出以后，就会返回调用方，如给主函数，主函数再给虚拟机。
+真实开发时，异常信息是不会给用户看的，虚拟机会存起来，作为日志存在，我们可以定期去查看日志。并对程序改进。不需要给用户看。
+遇到识别的问题进行对象封装，并返回给调用者，谁调用他给谁，如果没人处理，最终到虚拟机那，到虚拟机那程序就挂了。
+异常之后的代码都不会执行了。
 
+自定义异常类：
+必须要继承异常体系【要么继承Exception，要么继承RuntimeException】，因为只有称为异常体系的子类才有资格具有可抛性。才可以被两个关键字所操作（throws,throw）。
+类名最好以 Exception结尾。
+class MyException extends Exception{
+    MyException(String message){
+        super(message);  // 调父类的显示异常信息的构造方法。
+    }
+}
 
+【申明抛出】：就是在可能抛异常的那个方法 上加上：throws Exception;
+public static void main(String[] args) throws Exception {}
+参考：：
+src/main/java/cn/jhsoft/study/obj/ErrorDemo.java
 
+###################### Exception体系下【RuntimeException除外】的异常类：
+需要要么捕捉【try catch】，要么申明【在函数上 throws 异常类名】,申明的意思就是说我不处理，我再往上层抛。
 
+throws和throw的区别：
+1、throws使用在函数上，throw使用在函数内。
+2、throws抛出的是异常类，可以抛多个，用逗号隔开。throw抛出的是异常对象（throw new MyException())。
 
+异常处理的捕捉形式：
+try{
+    需要被检测异常的代码
+}
+catch(MyException e){
+    处理异常 或者继续往外抛
+    System.out.println(e.getMessage()+e);
+    e.printStackTrace(); //打印出完整的错误信息，如几行出的错，jvm默认的异常处理机制就是调用异常对象的这个方法。
+}
+finally{
+    最终化，这里不管有没有异常都会执行。只有一种情况执行不到，这种情况是：退出jvm，比如在catch里 【System.exit(0);】
+}
+try，catch，finally代码组合特点：：
+没有必要资源需要释放时，可以不用定义finally。
+也可以try  finally组合。就是说不写catch块。不写catch的情况是 放在方法上 throws 抛出。但是finally里的还是会执行。
+说白了，这种try finally的组合，就是把 catch的内容放在 方法上的throws中。
+try finally就是适合  异常无法直接catch处理，但是资源需要关闭。在try中继续 new throw xxx，在方法上 throws xxx;
 
+###################### 总结：：
+一旦在什么地方，throw new Exception()，那这个代码所在的函数就需要 throws Exception，申明他会有异常。
+同时，调用这个函数的函数，也需要 throws Exception 申明异常。
+在 catch {} 里再throw的，也需要函数 申明 throws Exception
+在 try {}里throw的，就不需要申明throws Exception了，因为catch里会捕捉。
+总结下，如果是多层调，那每一层都需要要么处理，要么继续往外抛。
+简单说，我调一个方法，看到他有 throws，那么我就要处理，要么我也throws，要么我try catch来捕捉。
 
+捕捉是为了解决问题的，如果没有解决，那就没必要try catch了，直接再往外抛 【throws】 就可以了
 
+异常对象的 printStackTrace方法：：：：：
+方法含义：将此throwable及其追踪输出至标准错误流如控制台，也可以自己传个输出流(PrintWriter)给他。
+void e.printStackTrace(); //打印出完整的错误信息，如几行出的错，jvm默认的异常处理机制就是调用异常对象的这个方法。
 
+多catch的情况下：
+按顺序执行。找到一个执行完，后面的catch不会再执行了。
+所以写多catch的时候，要把父Exception写在子Exception的前面。
 
-
-
-
-
-
-
-
-
-
+异常处理的原则：：
+1、函数内容如果抛出Exception(非RuntimeException)类的异常，那么函数上必须要声明。
+    否则必须在函数内用trycatch捕捉，否则编译失败。
+2、如果调用了声明异常的函数，要么trycatch要么throws，否则编译失败。
+3、什么时候用catch，什么时候用throws呢？
+   功能内容可以解决，用catch。解决不了，用throws告诉调用者，由调用者解决。
+4、一个功能如果抛出了多个异常，那么调用时，必须对应多个catch进行针对性的处理。
+   内部有几个需要检测的异常，就抛几个异常。抛出几个，就catch几个。
 
 
 

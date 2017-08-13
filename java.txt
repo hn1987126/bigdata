@@ -2981,6 +2981,15 @@ c[1] = new int[3];
 
 
 
+################################################################################################
+################# 获取 properties 文件内容：：
+################################################################################################
+Properties pro = new Properties();
+// 这是通过Spring的工具类获取
+pro.load(new FileInputStream(ResourceUtils.getFile("classpath:common.properties")));
+// 原生获取
+pro.load(new FileInputStream(new ClassPathResource("common.properties").getFile()));
+System.out.println(pro.getProperty("username"));
 
 
 

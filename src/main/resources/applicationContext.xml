@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+                        http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+    <!--ioc入门-->
+    <bean id="person" class="cn.jhsoft.study.bean.Person">
+        <!--使用有参参数向属性里设置值-->
+        <constructor-arg name="name" value="陈义1"></constructor-arg>
+        <constructor-arg name="age" value="30"></constructor-arg>
+        <!--使用set方式设置-->
+        <property name="name" value="海涛"/>
+        <property name="age" value="32"/>
+    </bean>
+    <!--使用静态工厂创建对象-->
+    <bean id="bean2" class="cn.jhsoft.study.spring.IOCDemo" factory-method="getBean2"></bean>
+    <!--使用实例工厂创建-->
+    <bean id="bean3Factory" class="cn.jhsoft.study.spring.IOCDemo"></bean>
+    <bean id="bean3" factory-method="getBean3" factory-bean="bean3Factory"></bean>
+
+
+</beans>

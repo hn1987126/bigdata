@@ -2995,6 +2995,174 @@ System.out.println(pro.getProperty("username"));
 
 
 
+################################################################################################
+################# Spring ：：
+################################################################################################
+1、Spring是开源的轻量级框架
+2、spring核心主要是两个部分：
+    2.1 aop：面向切面编程，扩展功能不是修改源代码实现。
+    2.2 ioc：控制反转。
+        - 比如有一个类，在类里面有方法（不是静态方法），调用类里的方法，是创建类的对象使用对象调用方法，创建类对象的过程，需要new出来对象。
+        - 把对象的创建不是通过new方式来实现，而是交给spring配置创建类对象。
+3、spring是一站式的框架。
+    spring在javaee的三层结构中，每一层都提供不同的解决技术。
+    web层  springMvc
+    service层  spring里的ioc
+    dao层     jdbcTemplate
+
+4、spring版本：
+    hibernate5.x
+    spring4.x
+
+######### Spring的ioc操作
+1、把对象的创建交给spring进行管理
+
+2、ioc操作两部分：
+    2.1 ioc的配置文件方式
+    2.2 ioc的注解方式
+
+######### ioc底层原理使用的技术：
+xml配置文件
+dom4j解析xml文件
+工厂设计模式
+反射
+
+######### 反射创建类：
+Class clazz = Class.forName("cn.jhsoft.study.bean.Person");
+Person person = (Person) clazz.newInstance();
+System.out.println(person.getName());
+
+######### spring的四个核心包：
+beans,context,core,expression
+
+######### IOC入门案例：
+1、导入jar包
+    需要上面那四个核心包 beans,context,core,expression
+    <!-- 添加spring核心依赖 -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-core</artifactId>
+        <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-beans</artifactId>
+        <version>${spring.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-expression</artifactId>
+        <version>${spring.version}</version>
+    </dependency>
+
+2、创建类，在类里面创建方法
+    如 cn.jhsoft.study.bean.Person类
+
+3、创建spring配置文件，配置创建类
+    applicationContext.xml
+    注意里面的 schema 约束,与dtd有区别：：
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
+        <!--ioc入门-->
+        <bean id="person" class="cn.jhsoft.study.bean.Person"></bean>
+    </beans>
+
+4、写代码测试对象的创建
+    // 加载spring配置文件
+    ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+    // 得到配置创建的对象
+    Person person = (Person) context.getBean("person");
+    System.out.println(person);
+
+
+
+######### Spring的bean管理(xml方式)
+1、在spring里面通过配置文件创建对象。
+2、bean实例化三种方式实现
+    使用类的无参数构造创建（常用）
+    使用静态工厂创建
+        在类里创建静态的方法，返回类对象。类名.xx
+        配置文件：
+        <!--使用静态工厂创建对象-->
+        <bean id="bean2" class="cn.jhsoft.study.spring.IOCDemo" factory-method="getBean2"></bean>
+        工厂类IOCDemo：
+        public static IOCDemo getBean2(){
+            return new IOCDemo();
+        }
+        调用：
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        IOCDemo bean2 = (IOCDemo) context.getBean("bean2");
+
+    使用实例工厂创建
+        创建一个非静态方法，返回类对象。对象.xx
+        <!--使用实例工厂创建-->
+        <bean id="bean3Factory" class="cn.jhsoft.study.spring.IOCDemo"></bean>
+        <bean id="bean3" factory-method="getBean3" factory-bean="bean3Factory"></bean>
+        工厂类IOCDemo：
+        public IOCDemo getBean3(){
+            return new IOCDemo();
+        }
+        调用与上面完全相同。
+
+3、bean标签常用属性：
+    id属性  唯一标识，id属性值任意命名。不能包含特殊符号，只能是英文和数字。根据id值得到配置对象。
+    class属性   创建对象所在类的全路径。
+    name属性    它的功能跟id本身是相同的，id不能包含特殊符号，name中可以包含特殊符号如#_等。已经被淘汰了。用name不用id，程序也能正常获取getBean()
+    scope属性   singleton默认的单例，prototype多例，request 创建对象并把对象放到request域里,session 创建对象并把对象放到session域里,globalSession 创建对象并把对象放到globalSession域里。
+
+######### Spring中属性的注入：：
+    1、使用有参数构造的注入
+    <!--ioc入门-->
+    <bean id="person" class="cn.jhsoft.study.bean.Person">
+        <!--使用有参参数向属性里设置值-->
+        <constructor-arg name="name" value="陈义1"></constructor-arg>
+        <constructor-arg name="age" value="30"></constructor-arg>
+    </bean>
+
+    2、通过set方法设置
+    <!--使用set方式设置-->
+    <property name="name" value="海涛"/>
+    <property name="age" value="32"/>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

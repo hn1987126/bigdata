@@ -58,6 +58,7 @@ public class Person implements Serializable {
         return "Person{" +
                 "name='" + name + '\'' +
                 ", age=" + age +
+                ", hashcode=" + super.hashCode() +
                 '}';
     }
 }

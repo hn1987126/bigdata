@@ -8,6 +8,16 @@
     <artifactId>bigdata</artifactId>
     <version>1.0-SNAPSHOT</version>
 
+    <properties>
+        <!-- spring版本号 -->
+        <spring.version>4.2.5.RELEASE</spring.version>
+        <!-- mybatis版本号 -->
+        <mybatis.version>3.2.8</mybatis.version>
+        <!-- log4j日志包版本号 -->
+        <slf4j.version>1.7.18</slf4j.version>
+        <log4j.version>1.2.17</log4j.version>
+    </properties>
+
 
     <dependencies>
         <dependency>
@@ -87,6 +97,29 @@
             <artifactId>junit</artifactId>
             <version>RELEASE</version>
         </dependency>
+
+        <!-- 添加spring核心依赖 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-core</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-beans</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-expression</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
     </dependencies>
 
 

@@ -3132,16 +3132,154 @@ beans,context,core,expression
     <property name="name" value="海涛"/>
     <property name="age" value="32"/>
 
+    3、注入对象类型属性（重点）
+    UserService类
+    public class UserService {
+        // 提供set方法，供spring通过set注入
+        private UserDao userDao;
+        public void setUserDao(UserDao userDao) {
+            this.userDao = userDao;
+        }
+
+        public void add(){
+            System.out.println("service add");
+            userDao.add();
+
+        }
+    }
+    UserDao类
+    public class UserDao {
+        public void add(){
+            System.out.println("add dao...");
+        }
+    }
+
+    spring配置文件
+    <!--注入对象类型属性-->
+    <bean id="userDao" class="cn.jhsoft.study.spring.UserDao"></bean>
+    <bean id="userService" class="cn.jhsoft.study.spring.UserService">
+        <property name="userDao" ref="userDao"></property>
+    </bean>
+
+    调用与之前的相同
+    // 加载spring配置文件
+    ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
+    UserService us = (UserService) context.getBean("userService");
+    us.add();
+
+    4、p名称空间注入：
+    在spring配置文件中，引入约束
+    xmlns:p="http://www.springframework.org/schema/p"
+    <!--p名称空间注入-->
+    <bean id="personp" class="cn.jhsoft.study.bean.Person" p:name="海涛" p:age="25"></bean>
+
+    5、注入复杂类型属性：
+    5.1、数组
+    5.2、List
+    5.3、Map
+    5.4、Properties
+
+    <!--注册复杂类型-->
+    <bean id="user" class="cn.jhsoft.study.spring.User" p:uname="老宫">
+        <!--数组-->
+        <property name="arrs">
+            <list>
+                <value>小宫</value>
+                <value>小陈</value>
+            </list>
+        </property>
+
+        <!--List集合-->
+        <property name="list">
+            <list>
+                <value>小宫1</value>
+                <value>小陈1</value>
+            </list>
+        </property>
+
+        <!--Map集合-->
+        <property name="map">
+            <map>
+                <entry key="a" value="Lucy"></entry>
+                <entry key="b" value="Lilei"></entry>
+            </map>
+        </property>
+
+        <!--Properties-->
+        <property name="pro">
+            <props>
+                <prop key="diverclass">com.mysql.jdbc.Driver</prop>
+                <prop key="port">3306</prop>
+            </props>
+        </property>
+    </bean>
 
 
 
+######### IOC和DI的区别：
+    IOC 是控制反转，把对象创建交给spring进行配置
+    DI 是依赖注入，为上一步配置的类里面的属性设置值。
+
+    关系：依赖注入不能单独存在，需要在ioc基础之上完成操作。
 
 
 
+######### Spring整合web项目原理：
+1、加载spring核心配置文件。
+2、实现思想：把加载配置文件和创建对象过程，在服务器启动时完成。
+3、实现原理：
+    3.1、ServletContext对象
+    3.2、监听器
+    3.3、具体使用：
+        - 在服务器启动时，为每个项目创建一个ServletContext对象。
+        - 在ServletContext对象创建时，使用监听器【ServletContextListener接口】可以监听得到ServletContext对象在什么时候创建。
+        - 使用监听器监听到ServletContext对象创建的时候。
+        - 加载spring配置文件，把配置文件配置对象创建
+        - 把创建出来的对象放到ServletContext域对象里面（setAttribute）
+        - 获取对象时，到ServletContext域得到（getAttribute）
 
 
 
+######### 注解方式：：：创建对象和属性
+|- 注解介绍：
+1、注解：就是代码里的特殊标记，使用注解可以完成功能。
+2、写法：@注解名称(属性名称=属性值)
+3、注解使用在 方法上边，属性上边，类上边。
 
+|- Spring注解开发准备工作
+1、准备工作：
+    导入jar包，spring四个核心包（core,context,beans,expression）
+    还需要导入注解包：spring-aop
+    创建类，创建方法
+    创建spring配置文件，引入约束：
+    前一天做ioc基本功能，引入约束beans，
+    做spring的ioc注解开发，需要引约束   xmlns:context="http://www.springframework.org/schema/context"
+    配置文件就不用前一天那么复杂了，只需要加写这一行：
+    <!--开启注解打扫
+        （1）到包里面扫描类、方法、属性上面是否有注解
+    -->
+    <context:component-scan base-package="cn.jhsoft.study.spring"></context:component-scan>
+
+    <!--扫描属性上面的注解，一般也不用 -->
+    <!--<context:annotation-config></context:annotation-config>-->
+
+
+2、注解创建对象
+    2.1、在类(User类)上面加个注解 @Component(value = "user")
+    
+
+3、注解注入属性
+
+
+
+######### AOP
+
+
+
+######### AOP操作（基于aspectj的xml方式）
+
+
+######### spring整合web项目：
 
 
 

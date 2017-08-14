@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                         http://www.springframework.org/schema/beans/spring-beans-4.0.xsd">
     <!--ioc入门-->
@@ -18,5 +20,49 @@
     <bean id="bean3Factory" class="cn.jhsoft.study.spring.IOCDemo"></bean>
     <bean id="bean3" factory-method="getBean3" factory-bean="bean3Factory"></bean>
 
+    <!--注入对象类型属性-->
+    <bean id="userDao" class="cn.jhsoft.study.spring.UserDao"></bean>
+    <bean id="userService" class="cn.jhsoft.study.spring.UserService">
+        <property name="userDao" ref="userDao"></property>
+    </bean>
+
+    <!--p名称空间注入-->
+    <bean id="personp" class="cn.jhsoft.study.bean.Person" p:name="海涛" p:age="25"></bean>
+
+    <!--注册复杂类型-->
+    <bean id="user" class="cn.jhsoft.study.spring.User" p:uname="老宫">
+        <!--数组-->
+        <property name="arrs">
+            <list>
+                <value>小宫</value>
+                <value>小陈</value>
+            </list>
+        </property>
+
+        <!--List集合-->
+        <property name="list">
+            <list>
+                <value>小宫1</value>
+                <value>小陈1</value>
+            </list>
+        </property>
+
+        <!--Map集合-->
+        <property name="map">
+            <map>
+                <entry key="a" value="Lucy"></entry>
+                <entry key="b" value="Lilei"></entry>
+            </map>
+        </property>
+
+        <!--Properties-->
+        <property name="pro">
+            <props>
+                <prop key="diverclass">com.mysql.jdbc.Driver</prop>
+                <prop key="port">3306</prop>
+            </props>
+        </property>
+
+    </bean>
 
 </beans>

@@ -3254,35 +3254,221 @@ beans,context,core,expression
     创建spring配置文件，引入约束：
     前一天做ioc基本功能，引入约束beans，
     做spring的ioc注解开发，需要引约束   xmlns:context="http://www.springframework.org/schema/context"
+    还需要 在属性 xsi:schemaLocation 里加上：：
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+
+    配置文件头：
+    <beans xmlns="http://www.springframework.org/schema/beans"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:p="http://www.springframework.org/schema/p"
+           xmlns:context="http://www.springframework.org/schema/context"
+           xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/context
+                            http://www.springframework.org/schema/context/spring-context.xsd">
+
+    </beans>
+
     配置文件就不用前一天那么复杂了，只需要加写这一行：
-    <!--开启注解打扫
-        （1）到包里面扫描类、方法、属性上面是否有注解
+    <!--开启注解打扫， 【component-scan】 这个的中文名字就是 【注解扫描】。
+        （1）到包里面扫描类、方法、属性上面是否有注解。如果 cn.jhsoft这个大包下的所有 【有注解的类】 都扫描，那就写cn.jhsoft。如果想扫描多个包，用逗号分开。
     -->
     <context:component-scan base-package="cn.jhsoft.study.spring"></context:component-scan>
 
-    <!--扫描属性上面的注解，一般也不用 -->
+    <!--扫描属性上面的注解，一般也不用，这种方法淘汰了 -->
     <!--<context:annotation-config></context:annotation-config>-->
 
 
 2、注解创建对象
-    2.1、在类(User类)上面加个注解 @Component(value = "user")
-    
+    2.1、在类(User类)上面加个注解 @Component(value = "user")  //这里面的value可以省略 //他相当于配置文件里的<bean id="user" class="cn.jhsoft.study.spring.User"/>
+    2.2、创建对象一共有4个注解：
+        @Component   类
+        @Controller  WEB层
+        @Service     业务层
+        @Repository  持久层
+        都是用来创建对象，他们功能一致，只是为了后续版本做扩展。
+    2.3、创建对象是单实例还是多实例  , 在上面那个注解那块，类上，再加个注解 @Scope(value = "prototype")
 
 3、注解注入属性
+    3.1、如创建UserService类 和 UserDao类，他们分别加上注解 @Service("userService") 和 @Component("userDao")
+
+        @Autowired 放在属性上，中文名【自动装配】，Autowired自动装配get和set方法。
+
+        UserService类：：
+        @Service("userService")
+        public class UserService {
+            // Autowired自动装配get和set方法
+            @Autowired
+            private UserDao userDao;
+            public void add(){
+                System.out.println("service add");
+                userDao.add();
+
+            }
+        }
+
+        调用方法和之前的完全相同。
+
+        属性注解的第二种方式：：：
+        @Resource(name="userDao")   // 里面的 name属性值 写 注解创建dao对象value值，也就是UserDao类里的注解里的value值。
+        private UserDao userDao;
+
+4、配置文件和注解的混合使用：
+    4.1、创建对象操作用配置文件的方式。
+    4.2、注入属性用注解的方式。
 
 
+######### AOP （Aspect Oriented Programing）
+|- AOP概念
+1、aop面向切面（方面）编程，扩展功能不修改源代码实现。
+2、aop采取横向抽取机制，取代了传统纵向继承体系重复性代码。
 
-######### AOP
+|- AOP原理
+使用jdk动态代理，针对有接口的情况。
+使用cglib动态代理，针对没有接口的情况。
 
+|- AOP专业术语
+Joinpoint(连接点)：所谓连接点是指那些被拦截到的点。在spring中，这些点指的是方法，因为spring只支持方法类型的连接点。
+Pointcut(切入点)：所谓切入点是指我们要对哪些Joinpoint进行拦截的定义。
+Advice(通知/增强)：所谓通知是指拦截到Joinpoint之后所有要做的事情就是通知，通知分为前置通知，后置通知，异常通知，最终通知，环绕通知（切面要完成的功能）。
+Aspect(切面)：是切入点和通知（引介）的结合。
+引介
+目标对象
+织入
+代理
 
+通俗讲：
+连接点：类里面哪些方法可以被增强，这些方法称为连接点。
+* 切入点：在类里面可以有秀多的方法被增强，比如实际操作中，只是增强了类里面add方法和update方法，实际增强的方法称为 切入点。
+* 通知/增强：增强的逻辑，称为增强，比如扩展日志功能，这个日志功能称为增强。
+            前置通知，在方法之前执行
+            后置通知，在方法之后执行
+            异常通知，方法出现异常时执行
+            最终通知，在后置之后执行
+            环绕通知，在方法之前和之后分别执行。
+* 切面：把增强应用到具体的方法上面，过程称为切面。它是把增强用到切入点的过程。
+
+参考如下类：
+public class UserDao{
+    public void add(){}
+    public void update(){}
+}
 
 ######### AOP操作（基于aspectj的xml方式）
+1、在spring里面进行aop操作，使用aspectj。
+    它不是spring的一部分，它是一个面向切面的框架，它扩展了java语言。它是一个基于java语言的aop框架。
+    spring2.0 以后新增了对Aspectj的支持。
+2、使用aspectj实现aop有两种方式
+    2.1、基于aspectj的xml配置
+    2.2、基于aspectj的注解方式
 
+AOP 练习：：
+1、引入jar包
+    spring-aspects 包
+    <!--切面 aspectj-->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-aspects</artifactId>
+        <version>${spring.version}</version>
+    </dependency>
+
+2、使用表达式配置切入点。
+    常用表达式：
+    execution(<访问修饰符>?<返回类型><方法名>(<参数>)<异常>)
+    2.1、execution(* cn.jhsoft.study.spring.UserDao.add(..))
+    2.2、execution(* cn.jhsoft.study.sprion.*(..))
+    2.3、execution(* *.*(..))  所有包所有类所有方法，参数任意
+    2.4、execution(* save*(..))  增强所有save开头的方法
+
+3、步骤
+    3.0、约束
+    <beans xmlns="http://www.springframework.org/schema/beans"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:aop="http://www.springframework.org/schema/aop"
+           xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop.xsd">
+    </beans>
+    比原来多  xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation里多：
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop.xsd
+
+    3.1、配置对象
+    <bean id="ser" class="cn.jhsoft.study.spring.User"></bean>
+    <bean id="myUser" class="cn.jhsoft.study.spring.MyUser"></bean>
+    3.2、配置aop操作
+    <aop:config>
+        <!--配置切入点-->
+        <aop:pointcut expression="execution(* cn.jhsoft.study.sprion.*(..))" id="pointcut1"/>
+
+        <!--配置切面  把增强用到方法上面 -->
+        <aop:aspect ref="myUser">
+            <!--配置增强类型，method：增强类里面使用哪个方法-->
+            <!--前置-->
+            <aop:before method="before1" pointcut-ref="pointcut1"/>
+            <!--后置-->
+            <aop:after-returning method="after1" pointcut-ref="pointcut1"/>
+            <!--环绕-->
+            <aop:around method="around1" pointcut-ref="pointcut1"/>
+        </aop:aspect>
+    </aop:config>
+
+
+    3.3、环绕通知的代码
+    // 环绕通知
+    public void around1(ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
+        // 方法之前
+        System.out.println("方法之前。。。");
+        // 执行被增强的方法
+        proceedingJoinPoint.proceed();
+        // 方法之后
+        System.out.println("方法之后。。。");
+    }
+
+    3.4、测试用例
+    @Test
+    public void testAOC(){
+        // 对User类中的test1进行增强，用myUser中的几个方法来进行增强。
+        User user = (User)context.getBean("user");
+        user.test1();
+    }
 
 ######### spring整合web项目：
+----------- 问题：加载spring配置文件，要不断的加载，不断的创建对象。
+spring web,帮我们创建了监听器，解决这个不断创建的问题，通过监听器，只需要创建一次。
 
+----------- 需要引入包：
+spring-web
+<!--spring web-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-web</artifactId>
+    <version>${spring.version}</version>
+</dependency>
 
+----------- web.xml文件：
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
+		  http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
 
+    <!--指定spring配置文件的位置 context-param是指上下文参数-->
+    <context-param>
+        <param-name>contextConfigLocation</param-name>
+        <param-value>classpath:applicationContextAOP.xml</param-value>
+    </context-param>
+
+    <!-- spring监听器 -->
+    <listener>
+        <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+    </listener>
+</web-app>
+
+----------- 完成上面两步，就不会重复加载spring配置文件了。
 
 
 

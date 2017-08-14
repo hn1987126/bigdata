@@ -30,7 +30,8 @@ public class IOCDemo {
     @Before
     public void testBefor(){
         // 加载spring配置文件
-        context = new ClassPathXmlApplicationContext("applicationContext.xml");
+        //context = new ClassPathXmlApplicationContext("applicationContextIOC.xml");
+        context = new ClassPathXmlApplicationContext("applicationContextAOP.xml");
     }
 
     @Test
@@ -62,6 +63,13 @@ public class IOCDemo {
 
     @Test
     public void testUser(){
+        User user = (User)context.getBean("user");
+        user.test1();
+    }
+
+
+    @Test
+    public void testAOC(){
         User user = (User)context.getBean("user");
         user.test1();
     }

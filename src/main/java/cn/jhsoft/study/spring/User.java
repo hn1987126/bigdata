@@ -1,6 +1,9 @@
 package cn.jhsoft.study.spring;
 
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Controller;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
@@ -11,6 +14,7 @@ import java.util.Properties;
  */
 
 @Component(value = "user")
+@Scope(value = "prototype")
 public class User {
     private String uname;
 

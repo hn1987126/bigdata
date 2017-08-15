@@ -63,7 +63,7 @@ public class hibernateDemo {
 
     @Test
     public void testDelete(){
-        
+
     }
 
 

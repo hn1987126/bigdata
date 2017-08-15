@@ -3474,8 +3474,451 @@ spring-web
 
 
 
+######### AOP操作（基于aspectj的 注解 方式）
+1、使用注解的方式实现aop操作（1.1和1.2都是修改spring配置文件，他的约束与 xml 方式是完全相同的）
+    1.1、创建对象
+    <!--1、配置对象-->
+    <bean id="user" class="cn.jhsoft.study.spring.User"></bean>
+    <bean id="myUser" class="cn.jhsoft.study.spring.MyUser"></bean>
+
+    1.2、在spring核心配置文件中，开启aop扫描操作。
+    <!--开启AOP操作-->
+    <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+
+    1.3、完整的配置文件
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:aop="http://www.springframework.org/schema/aop"
+           xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop.xsd">
+
+        <!--开启AOP操作-->
+        <aop:aspectj-autoproxy></aop:aspectj-autoproxy>
+
+        <!--1、配置对象-->
+        <bean id="user" class="cn.jhsoft.study.spring.User"></bean>
+        <bean id="myUser" class="cn.jhsoft.study.spring.MyUser"></bean>
+    </beans>
+
+    1.3、在增强类中用注解的方式实现，MyUser类
+    类上面加：：@Aspect  // AOP注解
+    方法上面加：
+    // 给User类里的所有方法，各种参数类型的，都增强
+    @Before(value = "execution(* cn.jhsoft.study.spring.User.*(..))")
 
 
+
+
+######### Spring的jdbcTemplate操作
+1、spring框架  一站式框架：
+1.1、针对javaee三层，每一层都有解决技术。
+1.2、spring对不同的持久层都进行了封装。如mybatis，hibernate,jdbc,jpa等
+    jdbcTemplate使用和dbutils使用很相似，都是对数据库进行crud操作。
+
+2、增加操作
+    2.1、导入jdbcTemplate使用的jar包。
+        spring-jdbc 包  和  spring-tx 包
+
+        <!--jdbcTemplate包-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <!--jdbcTemplate 事务包-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        导入mysql包：
+        <!-- 添加mysql驱动依赖 -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql-driver.version}</version>
+        </dependency>
+
+
+    2.2、创建对象，设置数据库信息。
+        // 设置数据库信息
+        DriverManagerDataSource dataSource = new DriverManagerDataSource();
+        dataSource.setDriverClassName("com.mysql.jdbc.Driver");
+        dataSource.setUrl("jdbc:mysql:///artime365");
+        dataSource.setUsername("root");
+        dataSource.setPassword("123456");
+
+
+    2.3、创建jdbcTemplate对象，设置数据源。
+    // 创建jdbcTemplate对象
+    JdbcTemplate jdbcTemplate = new JdbcTemplate(dataSource);
+
+
+    2.4、调用jdbcTemplate对象里面的方法实现操作。
+    添加方法，rows是指影响的行数。
+    String sql = "insert into tbl_audio values(?,?,?,?,?)";
+    int rows = jdbcTemplate.update(sql, null, "1004", "http://www.jd.com", "jd.com", "md5");
+
+    修改和删除和添加一样，都是调用 update方法 。
+
+    2.5、查询方法：
+        JdbcTemplate实现查询，有接口RowMapper，jdbcTemplate针对这个接口没有提供实现类，得到不同类型的数据需要自己进行封装。
+
+        2.5.1、查询返回一个值
+            String sql = "select count(*) from tbl_audio";
+            // queryForObject第一个是sql,第二个是返回值类型，如果是返回字符串 String.class
+            int count = jdbcTemplate.queryForObject(sql, Integer.class);
+
+        2.5.2、查询返回对象
+        String sql = "select * from tbl_audio where id = ?";
+        // queryForObject第一个是sql,
+        // 第二个是接口RowMapper，需要自己写实现类实现接口，自己做数据封装。类似dbutils里面的接口
+        // 第三个参数是 可变参数
+        Audio audio = jdbcTemplate.queryForObject(sql, new MyRowMapper(), 1);
+
+
+        2.5.3、查询返回List集合
+        String sql = "select * from tbl_audio where id>=?";
+        // queryForObject第一个是sql,
+        // 第二个是接口RowMapper，需要自己写实现类实现接口，自己做数据封装。类似dbutils里面的接口
+        // 第三个参数是 可变参数
+        List<Audio> list = jdbcTemplate.query(sql, new MyRowMapper(), 1);
+        for (Audio audio : list){
+            System.out.println(audio.getId()+"-"+audio.getUrl());
+        }
+
+        ################ 2.5.2 和 2.5.3 都需要依赖自己写的一个类MyRowMapper，实现RowMapper接口
+        /**
+         * RowMapper接口
+         */
+        class MyRowMapper implements RowMapper<Audio>{
+            @Override
+            public Audio mapRow(ResultSet rs, int rowNum) throws SQLException {
+                // 1、从结果集里把数据得到
+                String url = rs.getString("url");
+                String code_url = rs.getString("code_url");
+                int id = rs.getInt("id");
+                int count_id = rs.getInt("count_id");
+                String count_id_md5 = rs.getString("count_id_md5");
+
+
+                // 2、把得到的数据封装到对象里
+                Audio audio = new Audio();
+                audio.setId(id);
+                audio.setUrl(url);
+                audio.setCode_url(code_url);
+                audio.setCount_id(count_id);
+                audio.setCount_id_md5(count_id_md5);
+
+                return audio;
+            }
+        }
+
+
+######### Spring配置连接池和dao使用jdbcTemplate
+1、spring配置c3p0连接池
+    1.1、导入jar包
+        c3p0.jar 和 mchange-commons-java-0.2.3.4.jar
+
+        <!-- 数据源 c3p0 连接池 -->
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.5-pre8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>mchange-commons-java</artifactId>
+            <version>0.2.12</version>
+        </dependency>
+
+    1.2、spring配置文件：
+        <!--配置c3p0连接池-->
+        <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+            <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+            <property name="jdbcUrl" value="jdbc:mysql:///artime365"></property>
+            <property name="user" value="root"></property>
+            <property name="password" value="123456"></property>
+        </bean>
+
+2、dao使用jdbcTemplate
+    2.1、创建Service和Dao类，配置Service和Dao对象。
+        通过注解的方法：
+        @Component("audioDao")
+        public class AudioDao{}
+
+        @Service("audioService")
+        public class AudioService{
+            @Autowired
+            private AudioDao audioDao;
+        }
+
+    2.2、在AudioDao类中 添加JdbcTemplate属性
+        @Autowired
+        private JdbcTemplate jdbcTemplate;
+
+    2.3、在jdbcTemplate对象里面注入 dataSource属性
+        <!--创建jdbcTemplate对象-->
+        <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+            <!--把dataSource传递到模板对象里面-->
+            <property name="dataSource" ref="dataSource"></property>
+        </bean>
+
+3、完整代码：
+    ------------- spring配置文件：
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:p="http://www.springframework.org/schema/p"
+           xmlns:context="http://www.springframework.org/schema/context"
+           xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/context
+                            http://www.springframework.org/schema/context/spring-context.xsd">
+
+        <!--开启注解打扫-->
+        <context:component-scan base-package="cn.jhsoft.study"></context:component-scan>
+
+        <!--配置c3p0连接池-->
+        <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+            <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+            <property name="jdbcUrl" value="jdbc:mysql:///artime365"></property>
+            <property name="user" value="root"></property>
+            <property name="password" value="123456"></property>
+        </bean>
+
+        <!--创建jdbcTemplate对象-->
+        <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+            <!--把dataSource传递到模板对象里面-->
+            <property name="dataSource" ref="dataSource"></property>
+        </bean>
+    </beans>
+
+    ------------- AudioDao类和AudioService类
+    @Component("audioDao")
+    public class AudioDao {
+
+        @Autowired
+        private JdbcTemplate jdbcTemplate;
+
+        public void add(){
+            String sql = "insert into tbl_audio values(?,?,?,?,?)";
+            int rows = jdbcTemplate.update(sql, null, "1005", "http://www.jd.com", "jd.com", "md5");
+            System.out.println(rows);
+        }
+
+    }
+
+    @Service("audioService")
+    public class AudioService {
+
+        @Autowired
+        private AudioDao audioDao;
+
+        public void add(){
+            audioDao.add();
+        }
+
+    }
+
+    ------------- 测试
+    // 查询表返回List集合
+    @Test
+    public void testC3P0(){
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext_c3p0.xml");
+        AudioService audioService = (AudioService)context.getBean("audioService");
+        audioService.add();
+    }
+
+
+######### Spring事务管理
+1、事务的特性：
+    原子性，一致性，隔离性。
+2、不考虑隔离性产生读问题
+
+3、解决读问题
+    3.1、设置隔离级别
+
+Spring事务管理api
+    1、spring事务管理两种方式：
+        1.1、编程式事务管理（还需要写代码实现，一般不用）
+        1.2、声明式事务管理
+            1.2.1、基于xml配置文件实现
+            1.2.2、基于注解实现
+
+    2、api事务管理
+        首先，配置事务管理器。
+
+
+######### 搭建【转帐】环境：
+1、创建数据库表，添加数据
+    CREATE TABLE IF NOT EXISTS `tbl_order` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `username` varchar(30) NOT NULL COMMENT '用户名',
+      `salary` int(11) DEFAULT NULL,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8;
+
+    INSERT INTO `tbl_order` (`id`, `username`, `salary`) VALUES
+    	(9, 'chenyi', 1000),
+    	(10, 'gonghaitao', 2000);
+
+2、OrderDao类和 OrderService类
+    public class OrderService {
+
+        private OrderDao orderDao;
+
+        public void setOrderDao(OrderDao orderDao) {
+            this.orderDao = orderDao;
+        }
+
+        /**
+         * 调用dao方法
+         * 业务逻辑层，写转账业务
+         */
+        public void accountMoney(){
+            // chenyi少100
+            orderDao.lessMoney();
+            // 这是为了测试出现异常，看是否会回滚
+            //int i = 10/0;
+            // gonghaitoa多100
+            orderDao.moreMoney();
+        }
+    }
+
+    public class OrderDao {
+
+        private JdbcTemplate jdbcTemplate;
+
+        public void setJdbcTemplate(JdbcTemplate jdbcTemplate) {
+            this.jdbcTemplate = jdbcTemplate;
+        }
+
+        /**
+         * 做对数据库操作的方法 ，不管业务方法
+         * chenyi 少钱的方法
+         */
+        public void lessMoney(){
+            String sql = "update tbl_order set salary=salary-? where username='chenyi'";
+            int rows = jdbcTemplate.update(sql, 100);
+            System.out.println(rows);
+        }
+
+        /**
+         * gonghaitao 多钱的方法
+         */
+        public void moreMoney(){
+            String sql = "update tbl_order set salary=salary+? where username='gonghaitao'";
+            int rows = jdbcTemplate.update(sql, 100);
+            System.out.println(rows);
+        }
+
+    }
+
+
+3、配置文件，这个配置文件的约束是最全的。
+    <?xml version="1.0" encoding="UTF-8"?>
+    <beans xmlns="http://www.springframework.org/schema/beans"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:context="http://www.springframework.org/schema/context"
+           xmlns:p="http://www.springframework.org/schema/p"
+           xmlns:aop="http://www.springframework.org/schema/aop"
+           xmlns:tx="http://www.springframework.org/schema/tx"
+           xsi:schemaLocation="http://www.springframework.org/schema/beans
+                            http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+                            http://www.springframework.org/schema/context
+                            http://www.springframework.org/schema/context/spring-context.xsd
+                            http://www.springframework.org/schema/aop
+                            http://www.springframework.org/schema/aop/spring-aop.xsd
+                            http://www.springframework.org/schema/tx
+                            http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+        <!--配置c3p0连接池-->
+        <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+            <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+            <property name="jdbcUrl" value="jdbc:mysql:///artime365"></property>
+            <property name="user" value="root"></property>
+            <property name="password" value="123456"></property>
+        </bean>
+
+        <bean id="orderDao" class="cn.jhsoft.study.springjdbc.OrderDao">
+            <property name="jdbcTemplate" ref="jdbcTemplate"></property>
+        </bean>
+        <bean id="orderService" class="cn.jhsoft.study.springjdbc.OrderService">
+            <property name="orderDao" ref="orderDao"></property>
+        </bean>
+
+        <!--创建jdbcTemplate对象-->
+        <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+            <!--把dataSource传递到模板对象里面-->
+            <property name="dataSource" ref="dataSource"></property>
+        </bean>
+
+    </beans>
+
+4、测试
+    // 转帐测试
+    @Test
+    public void testOrder(){
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext_all.xml");
+        OrderService orderService = (OrderService)context.getBean("orderService");
+        orderService.accountMoney();
+    }
+
+############# 加事务
+5、声明式事务管理（xml）
+只需要对spring配置文件进行修改，其他都不需要，配置文件加入如下代码：
+
+    <!--第一步 配置事务管理器-->
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <!--注入dataSource-->
+        <property name="dataSource" ref="dataSource"></property>
+    </bean>
+
+    <!--第二步 配置事务增强-->
+    <tx:advice id="txadvice" transaction-manager="transactionManager">
+        <!--做事务操作-->
+        <tx:attributes>
+            <!--设置进行事务操作 的方法匹配规则-->
+            <tx:method name="account*" propagation="REQUIRED"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!--第三步 配置切面-->
+    <aop:config>
+        <!--切入点-->
+        <aop:pointcut id="pointcut1" expression="execution(* cn.jhsoft.study.springjdbc.OrderService.*(..))"></aop:pointcut>
+        <!--切面，把哪个增强 用到哪个切入点上 -->
+        <aop:advisor advice-ref="txadvice" pointcut-ref="pointcut1"></aop:advisor>
+    </aop:config>
+
+    再执行上面的测试类即可看到效果，测试时把那个  int i = 10/0; 这行异常打开。
+
+6、声明式事务管理（注解）
+    6.1、配置事务管理器，配置文件上面的3步，变成下面2步。
+        <!--第一步 配置事务管理器-->
+        <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+            <!--注入dataSource-->
+            <property name="dataSource" ref="dataSource"></property>
+        </bean>
+
+    6.2、配置事务注解
+        <!--第二步 开启事务注解-->
+        <tx:annotation-driven transaction-manager="transactionManager"></tx:annotation-driven>
+
+    6.3、在要使用事务的方法所在类上添加注解。
+    // 对OrderService类下的所有方法进行事务管理
+    @Transactional
+    public class OrderService {}
+
+
+
+######### ssh框架整合：
+orm  ：  对象关系映射
 
 
 

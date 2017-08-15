@@ -74,4 +74,13 @@ public class IOCDemo {
         user.test1();
     }
 
+
+    @Test
+    public void testZhujieAOC(){
+        ApplicationContext context = new ClassPathXmlApplicationContext("applicationContextAOPZhuJie.xml");
+
+        User user = (User)context.getBean("user");
+        user.test1();
+    }
+
 }

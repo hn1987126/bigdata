@@ -1,11 +1,19 @@
 package cn.jhsoft.study.spring;
 
 import org.aspectj.lang.ProceedingJoinPoint;
+import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.annotation.Before;
+import org.springframework.stereotype.Component;
 
 /**
  * Created by chen on 2017/8/14.
  */
+@Aspect  // AOP注解
+@Component("myUser")
 public class MyUser {
+
+    // 给User类里的所有方法，各种参数类型的，都增强
+    @Before(value = "execution(* cn.jhsoft.study.spring.User.*(..))")
     public void before1(){
         System.out.println("前置增强");
     }

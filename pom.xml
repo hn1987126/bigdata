@@ -16,6 +16,8 @@
         <!-- log4j日志包版本号 -->
         <slf4j.version>1.7.18</slf4j.version>
         <log4j.version>1.2.17</log4j.version>
+        <!-- mysql驱动版本号 -->
+        <mysql-driver.version>5.1.29</mysql-driver.version>
     </properties>
 
 
@@ -131,11 +133,42 @@
             <artifactId>spring-aspects</artifactId>
             <version>${spring.version}</version>
         </dependency>
-        <!--spring web-->
+        <!--spring 做web项目需要他的web包-->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
             <version>${spring.version}</version>
+        </dependency>
+        <!--jdbcTemplate包-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jdbc</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+        <!--jdbcTemplate 事务包-->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-tx</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <!-- 添加mysql驱动依赖 -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>${mysql-driver.version}</version>
+        </dependency>
+
+        <!-- 数据源 c3p0 连接池 -->
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>c3p0</artifactId>
+            <version>0.9.5-pre8</version>
+        </dependency>
+        <dependency>
+            <groupId>com.mchange</groupId>
+            <artifactId>mchange-commons-java</artifactId>
+            <version>0.2.12</version>
         </dependency>
 
     </dependencies>

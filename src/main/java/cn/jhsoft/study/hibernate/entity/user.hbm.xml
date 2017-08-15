@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <!--1、配置类和表对应
+        name属性：实体类全路径
+        table属性：表名，可以不先建，hibernate会自动建
+    -->
+    <class name="cn.jhsoft.study.hibernate.entity.Order" table="tbl_order">
+        <!--2、配置实体类id和表id对应，hibernate要求实体类有一个属性唯一值，要求表有字段作为唯一值
+        name属性：实体类里那个唯一属性名称，他就叫id。
+        column属性：生成的表字段名称，数据库里的唯一
+        -->
+        <id name="id" column="id">
+            <!--设置数据表id增长的策略
+            native值：id是主键并自动增长
+            -->
+            <generator class="native"></generator>
+        </id>
+        <!--配置其他属性和表字段对应 name是实体类的名称, column是字段名称-->
+        <property name="username" column="username"></property>
+        <property name="salary" column="salary"></property>
+
+    </class>
+</hibernate-mapping>

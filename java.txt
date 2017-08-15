@@ -3922,6 +3922,205 @@ orm  ：  对象关系映射
 
 
 
+######### hibernate：
+1、引入jar包：
+    <!-- 添加Hibernate -->
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>5.0.7.Final</version>
+    </dependency>
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-entitymanager</artifactId>
+        <version>5.0.7.Final</version>
+    </dependency>
+    <!-- 添加javassist - hibernate会依赖他 -->
+    <dependency>
+        <groupId>javassist</groupId>
+        <artifactId>javassist</artifactId>
+        <version>3.12.0.GA</version>
+    </dependency>
+
+    <!-- 添加Log4J依赖 -->
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+
+    <dependency>
+       <groupId>org.slf4j</groupId>
+       <artifactId>slf4j-nop</artifactId>
+       <version>1.7.18</version>
+    </dependency>
+
+2、实体类：
+    hibernate要求实体类有一个属性唯一
+
+3、配置实体类和数据库表的一一对应关系（映射关系）
+    使用配置文件实现映射关系：
+    （1）创建xml格式配置文件
+        映射配置文件名称和位置没有固定要求，建立在实体类所在包里创建，命名规则：【实体类名称.hbm.xml】
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+                "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+        <hibernate-mapping>
+            <!--1、配置类和表对应
+                name属性：实体类全路径
+                table属性：表名，可以不先建，hibernate会自动建
+            -->
+            <class name="cn.jhsoft.study.hibernate.entity.Order" table="tbl_order">
+                <!--2、配置实体类id和表id对应，hibernate要求实体类有一个属性唯一值，要求表有字段作为唯一值
+                name属性：实体类里那个唯一属性名称，他就叫id。
+                column属性：生成的表字段名称，数据库里的唯一
+                -->
+                <id name="id" column="id">
+                    <!--设置数据表id增长的策略
+                    native值：id是主键并自动增长
+                    -->
+                    <generator class="native"></generator>
+                </id>
+                <!--配置其他属性和表字段对应 name是实体类的名称, column是字段名称-->
+                <property name="username" column="username"></property>
+                <property name="salary" column="salary"></property>
+
+            </class>
+        </hibernate-mapping>
+
+4、创建hibernate核心配置文件：
+    做数据库的配置。如用户名密码、数据库名等。
+    （1）核心配置文件格式xml，但是核心配置文件名称和位置固定。
+        位置：必须在src下面。
+        名称：必须hibernate.cfg.xml
+        hibernate操作过程中，只会加载核心配置文件。其他配置文件不会加载。
+        第一部分：配置数据库信息  必须的
+        第二部分：配置hibernate信息  可选的
+        第三部分：把映射文件放到核心配置文件中 必须的
+
+        hibernate.cfg.xml 文件内容：
+        <?xml version="1.0" encoding="UTF-8"?>
+        <!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+                "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+        <hibernate-configuration>
+            <session-factory>
+                <!--第一部分：配置数据库信息 必须-->
+                <property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+                <property name="hibernate.connection.url">jdbc:mysql:///artime365</property>
+                <property name="hibernate.connection.username">root</property>
+                <property name="hibernate.connection.password">123456</property>
+
+                <!--第二部分：配置hibernate信息 可选-->
+                <!--输出底层sql-->
+                <property name="hibernate.show_sql">true</property>
+                <!--输出底层sql格式-->
+                <property name="hibernate.format_sql">true</property>
+                <!--hibernate帮创建表，需要配置之后
+                update：如果已经有表，更新，如果没有，创建-->
+                <property name="hibernate.hbm2ddl.auto">update</property>
+                <!--配置数据库方言
+                在mysql里实现分页 关键字 limit，只能用到mysql里面
+                在oracle数据库，实现分页用 rownum
+                让hibernate框架识别不同数据库中的语句-->
+                <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+
+                <!--第三部分：把映射文件放到核心配置文件中 必须的-->
+                <mapping resource="cn/jhsoft/study/hibernate/entity/user.hbm.xml"></mapping>
+
+            </session-factory>
+        </hibernate-configuration>
+
+
+5、实现添加操作，前4步和后2步都是固定的。
+    5.1、加载hibernate核心配置文件
+
+    5.2、创建SessionFactory对象
+
+    5.3、使用SessionFactory创建session对象（与web项目里的session完全不同，本身不是一个东西）
+
+    5.4、开启事务
+
+    5.5、写具体逻辑 crud 操作
+
+    5.6、提交事务
+
+    5.7、关闭资源和连接
+
+    测试代码：
+    @Test
+    public void testAdd(){
+        //1、加载hibernate核心配置文件
+        // 到src下面找到名称是 hibernate.cfg.xml
+        // 在hibernate里面封装对象
+        Configuration cfg = new Configuration();
+        cfg.configure();
+
+        //2、创建SessionFactory对象
+        // 读取hibernate核心配置文件内容，创建sessionFactory
+        // 在过程中，根据映射关系，在配置数据库里面把表创建
+        SessionFactory sessionFactory = cfg.buildSessionFactory();
+
+        //3、使用SessionFactory创建session对象（与web项目里的session完全不同，本身不是一个东西）
+        // 类似于Connection连接
+        Session session = sessionFactory.openSession();
+
+        //4、开启事务
+        Transaction tx = session.beginTransaction();
+
+        //5、写具体逻辑 crud 操作
+        // 添加功能
+        Order order = new Order();
+        order.setUsername("cjh");
+        order.setSalary(2500);
+        // 调用session里的方法实现添加
+        session.save(order);
+
+        //6、提交事务
+        tx.commit();
+
+        //7、关闭资源和连接
+        session.close();
+        sessionFactory.close();
+
+    }
+
+
+################# 解决一个问题：
+在hibernate中，出现org.hibernate.MappingNotFoundException: resource:**.hbm.xml not found问题的解决方案：
+原因：如果idea项目里，在src/main/java目录里有xml文件，在编译的时候，是不会把它复制到target/classes目录下，需要显示的指定：
+<build>
+    <resources>
+        <resource>
+            <directory>src/main/java</directory>
+            <includes>
+                <include>**/*.xml</include>
+            </includes>
+        </resource>
+    </resources>
+</build>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

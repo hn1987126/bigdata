@@ -35,4 +35,13 @@ public class Order {
     public void setSalary(int salary) {
         this.salary = salary;
     }
+
+    @Override
+    public String toString() {
+        return "Order{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", salary=" + salary +
+                '}';
+    }
 }

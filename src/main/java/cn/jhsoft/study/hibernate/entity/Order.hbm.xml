@@ -17,8 +17,8 @@
             -->
             <generator class="native"></generator>
         </id>
-        <!--配置其他属性和表字段对应 name是实体类的名称, column是字段名称-->
-        <property name="username" column="username"></property>
+        <!--配置其他属性和表字段对应 name是实体类的名称, column是字段名称, type属性是字段的类型,不需要自己写,不需要用-->
+        <property name="username" column="username" type="java.lang.String"></property>
         <property name="salary" column="salary"></property>
 
     </class>

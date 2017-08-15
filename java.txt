@@ -3978,6 +3978,7 @@ orm  ：  对象关系映射
                 <id name="id" column="id">
                     <!--设置数据表id增长的策略
                     native值：id是主键并自动增长
+                    uuid值：生成128位的UUID，这要求此字段是字符串类型
                     -->
                     <generator class="native"></generator>
                 </id>
@@ -4083,6 +4084,27 @@ orm  ：  对象关系映射
         sessionFactory.close();
 
     }
+
+根据ID查询：：：
+    // 第一个参数是实体类，第二个参数是ID值（主键值）
+    Order order = session.get(Order.class, 1);
+
+修改：：：
+    首先查询，再修改值。
+    // 第一个参数是实体类，第二个参数是ID值（主键值）
+    Order order = session.get(Order.class, 1);
+    order.setUsername("hahaha");
+    session.update(order);
+
+删除：：：
+    先查询，再删除
+    Order order = session.get(Order.class, 1);
+    session.delete(order);
+
+    // 第二种删除方法
+    Order order1 = new Order();
+    order1.setId(1);
+    session.delete(order1);
 
 
 ################# 解决一个问题：

@@ -46,11 +46,6 @@ public class hibernateDemo {
     }
 
 
-    @Test
-    public void testUpdate(){
-        // 5、写具体逻辑 crud 操作
-    }
-
     @After
     public void testAfter(){
         //6、提交事务
@@ -62,8 +57,29 @@ public class hibernateDemo {
     }
 
     @Test
-    public void testDelete(){
+    public void testfindById(){
+        // 第一个参数是实体类，第二个参数是ID值（主键值）
+        Order order = session.get(Order.class, 1);
+        System.out.println(order);
+    }
 
+    @Test
+    public void testUpdate(){
+        Order order = session.get(Order.class, 1);
+        order.setUsername("hahaha");
+        session.update(order);  // save方法也可以 或者  saveOrUpdate方法
+    }
+
+    @Test
+    public void testDelete(){
+        // 先查询，再删除
+        Order order = session.get(Order.class, 1);
+        session.delete(order);
+
+        // 第二种删除
+        Order order1 = new Order();
+        order1.setId(1);
+        session.delete(order1);
     }
 
 
@@ -91,7 +107,7 @@ public class hibernateDemo {
         //5、写具体逻辑 crud 操作
         // 添加功能
         Order order = new Order();
-        order.setUsername("cjh");
+        order.setUsername("cjh123");
         order.setSalary(2500);
         // 调用session里的方法实现添加
         session.save(order);

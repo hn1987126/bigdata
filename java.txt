@@ -4748,10 +4748,101 @@ Hibernate检索策略：
 
 
 ################## Spring整合hibernate：：：
+1、把hibernate核心配置文件中配置数据库信息，放到spring中进行配置
+    去掉hibernate配置文件里的dataSource信息
+    把他写到spring里：
+    <!--配置c3p0连接池-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.jdbc.Driver"></property>
+        <property name="jdbcUrl" value="jdbc:mysql:///artime365"></property>
+        <property name="user" value="root"></property>
+        <property name="password" value="123456"></property>
+    </bean>
+
+2、把hibernate里面的sessionFactory创建交给spring管理
+    在spring的配置文件里加上：：
+
+    <!--sessionFactory的创建交经spring管理-->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <!--因为在hibernate核心配置文件中，没有数据库配置，数据库配置在spring里面配置，注入dataSource-->
+        <!--指定使用hibernate核心配置文件-->
+        <property name="dataSource" ref="dataSource"/>
+        <!--指定hibernate核心配置文件-->
+        <property name="configLocations" value="classpath:hibernate.spring.cfg.xml"/>
+    </bean>
+
+3、如果配置文件中没有加事务：
+    那用 hibernateTemplate.save(order); 的时候，会提示：
+    org.springframework.dao.InvalidDataAccessApiUsageException: Write operations are not allowed in read-only mode (FlushMode.MANUAL): Turn your Session into FlushMode.COMMIT/AUTO or remove 'readOnly' marker from transaction definition.
+    【解决：】
+    在spring配置文件中加入事务：
+    <!-- 配置hibernate的事务管理器 -->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <!--建议注入sessionFactory,但是注入dataSource也没问题，sessionFactory里包含了dataSource-->
+        <!--<property name="dataSource" ref="dataSource"/>-->
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!-- 开启事务注解 -->
+    <tx:annotation-driven transaction-manager="transactionManager"/>
+
+    然后在service类或dao类上，加入注解   @Transactional, 在他们谁身上加都可以，建立加在 service上。
 
 
+4、HibernateTemplate常用Api 【它是对hibernate进行了一层封装】
 
+    // 调用里面的save方法实现添加
+    Order order = new Order();
+    order.setUsername("spring");
+    order.setSalary(20000);
+    hibernateTemplate.save(order);
 
+    // get方法
+    Order o = hibernateTemplate.get(Order.class, 1);
+    System.out.println(o);
+
+    // find方法查询所有记录，find方法全是返回List
+    // 第一个参数是hql语句，第二个参数是语句中参数的值（可变参数）
+    List<Order> list = (List<Order>)hibernateTemplate.find("from Order");
+    for (Order order:list){
+        System.out.println(order);
+    }
+
+    // find条件查询
+    List<Order> list2 = (List<Order>)hibernateTemplate.find("from Order where id=?", 1);
+    for (Order order:list2){
+        System.out.println(order);
+    }
+
+5、整合的时候可以把hibernate的核心配置文件去掉，把他里面的配置放入到spring配置文件中
+    sessionFactory 这个bean 变成下面这样，去掉configLocations属性，就是放弃了hibernate的核心配置文件，把他里面的东西放到spring配置文件里。
+
+    <!--sessionFactory的创建交经spring管理-->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <!--因为在hibernate核心配置文件中，没有数据库配置，数据库配置在spring里面配置，注入dataSource-->
+        <!--指定使用hibernate核心配置文件-->
+        <property name="dataSource" ref="dataSource"/>
+        <!--指定hibernate核心配置文件-->
+        <!--<property name="configLocations" value="classpath:hibernate.spring.cfg.xml"/>-->
+
+        <!--不需要hibernate核心配置文件，把他里面的东西放在这里-->
+        <!--第一步、hibernate的基本配置信息-->
+        <property name="hibernateProperties">
+            <props>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.format_sql">true</prop>
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+                <prop key="hibernate.dialect">org.hibernate.dialect.MySQLDialect</prop>
+            </props>
+        </property>
+
+        <!--第二步、把映射文件放到核心配置文件中-->
+        <property name="mappingResources">
+            <list>
+                <value>cn/jhsoft/study/hibernate/entity/Order1.hbm.xml</value>
+            </list>
+        </property>
+    </bean>
 
 
 

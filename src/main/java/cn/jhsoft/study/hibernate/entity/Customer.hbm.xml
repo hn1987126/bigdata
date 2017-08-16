@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-mapping-3.0.dtd">
+<hibernate-mapping>
+    <!--1、配置类和表对应
+        name属性：实体类全路径
+        table属性：表名，可以不先建，hibernate会自动建
+    -->
+    <class name="cn.jhsoft.study.hibernate.entity.Customer" table="tbl_customer">
+        <!--2、配置实体类id和表id对应，hibernate要求实体类有一个属性唯一值，要求表有字段作为唯一值
+        name属性：实体类里那个唯一属性名称，他就叫id。
+        column属性：生成的表字段名称，数据库里的唯一
+        -->
+        <id name="id" column="id">
+            <!--设置数据表id增长的策略
+            native值：id是主键并自动增长
+            -->
+            <generator class="native"></generator>
+        </id>
+        <!--配置其他属性和表字段对应 name是实体类的名称, column是字段名称, type属性是字段的类型,不需要自己写,不需要用-->
+        <property name="relname" column="relname" type="java.lang.String"></property>
+
+        <!--在客户映射文件中表示出他所有的联系人
+        使用set 标签表示所有联系人，set标签里有name属性：属性值写在客户实体类里表示联系人 set 集合的名称
+        inverse属性值，默认是false，表示不放弃关系的维护。
+        -->
+        <set name="linkMen" cascade="save-update,delete" inverse="true">
+            <!--一对多建表，有外键
+            hibernate机制，双向维护外键，在一和多 两方都要配置外键
+            column 属性值 是外键名称
+            -->
+            <key column="cid"></key>
+            <!--客户所有的联系人，class里写联系人实体类全路径，就是说他和谁 一对多-->
+            <one-to-many class="cn.jhsoft.study.hibernate.entity.LinkMan"/>
+        </set>
+
+    </class>
+</hibernate-mapping>

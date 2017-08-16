@@ -4081,7 +4081,7 @@ orm  ：  对象关系映射
 
         //7、关闭资源和连接
         session.close();
-        sessionFactory.close();
+        sessionFactory.close();  // 真正项目中不需要关闭
 
     }
 
@@ -4105,6 +4105,655 @@ orm  ：  对象关系映射
     Order order1 = new Order();
     order1.setId(1);
     session.delete(order1);
+
+实体类的三种状态：：：
+    1、【瞬时态】    对象里面没有id值，与session没关联
+        Order order = new Order();
+        order.setUsername("ght");
+    2、【持久态】    对象里面有id值，与session关联
+        Order order = session.get(Order.class, 1);
+    3、【托管态】   对象有id值，与session没关联
+        Order order = new Order();
+        order.setId(1);
+        session.delete(order);
+
+操作实体类对象的方法：：：
+    1、saveOrUpdate方法，既然做更新又能做添加。
+        【瞬时态】时是做添加操作。
+        【托管态】【持久态】时是做更新操作。
+
+缓存：：：
+    什么是缓存：
+        数据存到数据库里面，数据库本身是文件系统，使用流方式操作文件效率不是很高。
+        （1）把数据存到内存里，不需要使用流方式，可以直接读取内存中的数据。
+        （2）把数据放到内存中，提高读取效率。
+    Hibernate缓存：
+        1、hibernate框架上提供了很多优化方式，hibernate缓存就是一个优化方式。
+        2、hibernate缓存特点：
+            2.1、一级缓存
+                默认就是打开的。
+                一级缓存使用范围：是session的范围。就是在session创建 到 session.close()之间。
+                一级缓存中，存储数据必须 是【持久态】数据
+            2.2、二级缓存
+                目前已经不用了，替换技术 redis
+                它的特点是：默认不打开，需要配置。二级缓存的使用范围不是session范围，是sessionFactory范围（一个项目只有一个）。
+
+    一级缓存特性：
+        1、【持久态】的数据，不用写update()方法，它也会自动更新到数据库。这叫自动提交。
+
+
+hibernate中事务操作：：：
+    1、设置事务隔离级别，mysql默认级别是 repeatable read
+    2、事务代码规范写法：
+        try{
+            开启事务
+            提交事务
+        }catch{
+            回滚事务
+        }finally{
+            关闭资源
+        }
+    3、代码示例：  tx和session都是在外面定义的全局变量。
+        try {
+            // 第一个参数是实体类，第二个参数是ID值（主键值）
+            Order order = session.get(Order.class, 11);
+            System.out.println(order);
+            int i = 10/0;
+            Order order2 = session.get(Order.class, 11);
+            System.out.println(order2);
+        }catch (Exception e){
+            // 回滚
+            tx.rollback();
+        }finally {
+            //7、关闭资源和连接
+            session.close();
+            sessionFactory.close();
+        }
+
+
+Hibernate绑定session：：：
+1、session类似jdbc的connection，【threadLocal】本地线程。
+2、框架帮实现了与本地线程绑定session。
+3、获取与本地线程绑定的session。
+    3.1、在hibernate核心配置文件中配置。
+        在第二步，配置可选信息那块，加上：
+        <!--配置session绑定本地线程-->
+        <property name="hibernate.current_session_context_class">thread</property>
+
+    3.2、调用sessionFactory里面的方法得到。
+        sessionFactory.getCurrentSession();
+
+    3.3、获取与本地线程绑定session的时候，关闭session会报错。
+        org.hibernate.SessionException: Session was already closed
+        这时不需要手动关闭session，因为线程结束它自己会关闭的，如果不是用这种方式的，还是需要手动关闭。
+
+    // 原始写法--本地线程
+    @Test
+    public void testAdd2(){
+        // 这一句就替代了之前的三句。
+        Session session = HibernateUtils.getCurrentSessionObject();
+        //4、开启事务
+        Transaction tx = session.beginTransaction();
+
+        //5、写具体逻辑 crud 操作
+
+        //6、提交事务
+        tx.commit();
+        // 不需要关闭
+    }
+
+
+
+Hibernate中Api的使用：：：
+1、Query对象
+    1.1、使用query对象，不需要写sql语句，但是要写hql（hibernate query language）语句。它和sql很相似。
+        sql和hql区别：
+            使用sql操作表和表字段，使用hql操作实体类和属性。
+    1.2、查询所有hql语句：
+        （1）from 实体类名称
+    1.3、Query对象使用：
+        1.3.1、创建Query对象。
+        1.3.2、调用query对象里的方法得到结果。
+
+        代码：：：
+        @Test
+        public void testQuery(){
+            // 1、创建Query对象，方法参数里写hql语句
+            Query query = session.createQuery("from Order");
+            // 2、调用query对象里的方法得到结果
+            List<Order> list = query.list();
+
+            for (Order order:list){
+                System.out.println(order);
+            }
+        }
+
+2、Criteria对象
+    使用这个对象查询操作，但是使用这个对象的时候，不需要写语句，直接调用方法实现。
+    @Test
+    public void testCriteria(){
+        // 1、创建Criteria对象，方法参数 是对象的class
+        Criteria criteria = session.createCriteria(Order.class);
+        // 2、调用Criteria对象里的方法得到结果
+        List<Order> list = criteria.list();
+
+        for (Order order:list){
+            System.out.println(order);
+        }
+    }
+
+
+3、SQLQuery对象
+    根据查询sql，返回的是数组。
+    @Test
+    public void testSQLQuery(){
+        // 1、创建SQLQuery对象，方法参数 是对象的class
+        SQLQuery sqlQuery = session.createSQLQuery("select * FROM tbl_order");
+        // 2、调用SQLQuery对象里的方法得到结果，结果是数组
+        List<Object[]> list = sqlQuery.list();
+        for (Object[] objects : list){
+            System.out.println("姓名："+objects[1]);
+            System.out.println(Arrays.toString(objects));
+        }
+    }
+
+    改良：想让返回的是对象。
+    加一句：sqlQuery.addEntity(Order.class);
+    代码：：
+    @Test
+    public void testSQLQueryRetunObject(){
+        // 1、创建SQLQuery对象，方法参数 是对象的class
+        SQLQuery sqlQuery = session.createSQLQuery("select * FROM tbl_order");
+        // 1.1、返回list中每部分是对象形式，并把实体传进去。
+        sqlQuery.addEntity(Order.class);
+        // 2、调用SQLQuery对象里的方法得到结果，结果是数组
+        List<Order> list = sqlQuery.list();
+        for (Order order : list){
+            System.out.println(order);
+        }
+    }
+
+表关系：：：
+
+######################  Hibernate中一对多的操作：：：
+1、一对多的映射配置
+    1.1、创建两个实体类，客户和联系人
+        代码参考：cn.jhsoft.study.hibernate.entity.Customer 和 cn.jhsoft.study.hibernate.entity.LinkMan
+        在 cn.jhsoft.study.hibernate.entity.Customer 中写个：并生成get,set方法
+        // 一对多，用Set集合来表示 多个联系人
+        private Set<LinkMan> linkMen;
+        在 cn.jhsoft.study.hibernate.entity.LinkMan 中写个：并生成get,set方法
+        // 一对多，联系人，他属于哪个客户
+        private Customer customer;
+
+    1.2、在映射文件中 表示出这种 一对多的关系
+
+        客户映射文件：Customer.hbm.xml
+        <!--在客户映射文件中表示出他所有的联系人 在<hibernate-mapping>标签下<class>标签下
+            使用set 标签表示所有联系人，set标签里有name属性：属性值写在客户实体类里表示联系人 set 集合的名称
+            inverse属性值，默认是false，表示不放弃关系的维护。-->
+        <set name="linkMen">
+            <!--一对多建表，有外键
+            hibernate机制，双向维护外键，在一和多 两方都要配置外键
+            column 属性值 是外键名称
+            -->
+            <key column="cid"></key>
+            <!--客户所有的联系人，class里写联系人实体类全路径，就是说他和谁 一对多-->
+            <one-to-many class="cn.jhsoft.study.hibernate.entity.LinkMan"/>
+        </set>
+
+        联系人映射文件：LinkMan.hbm.xml
+        <!--表示联系人所属客户   在<hibernate-mapping>标签下<class>标签下
+        name属性：在他实体类里定义的  客户对象的名称
+        class属性：客户 实体类全路径
+        column属性：外键名称
+        -->
+        <many-to-one name="customer" class="cn.jhsoft.study.hibernate.entity.Customer" column="cid"/>
+
+    1.3、测试：
+        在hibernate主配置文件中，加入这两个映射文件。
+        用下面这个方法，执行了sessionFactory方法，就会自动创建表。
+        @Test
+        public void testOneToMany(){
+
+        }
+
+
+2、一对多级联操作（操作多个表的数据）
+    2.1、级联保存
+        添加客户时添加多个联系人。
+
+        // 测试一对多，级联保存
+        @Test
+        public void testOneToManyInsert(){
+            Transaction tx = null;
+
+            try {
+                Session session = HibernateUtils.getCurrentSessionObject();
+
+                //4、开启事务
+                tx = session.beginTransaction();
+
+                // 添加一个客户，为这个客户添加一个联系人
+                // 1、创建客户和联系人对象
+                Customer cus = new Customer();
+                cus.setRelname("jd");
+
+                LinkMan linkMan = new LinkMan();
+                linkMan.setName("chenyi");
+
+                // 2、在客户中表示联系人，在联系人表示客户，也就是建立客户对象和联系人对象的关系
+                cus.getLinkMen().add(linkMan);
+                linkMan.setCustomer(cus);
+
+                // 3、保存到数据
+                session.save(cus);
+                session.save(linkMan);
+
+                tx.commit();
+
+
+            }catch (Exception e){
+                tx.rollback();
+            }
+        }
+
+        简化写法：
+            第一步：找到客户的映射文件：在set标签上进行配置 加 cascade="save-update"
+            第二步：创建客户和联系人对象，只需要把联系人放到客户里面就可以了，最终只需要保存客户就可以了。
+            核心代码：：
+            // 1、创建客户和联系人对象
+            Customer cus = new Customer();
+            cus.setRelname("yidao");
+
+            LinkMan linkMan = new LinkMan();
+            linkMan.setName("ght");
+            linkMan.setName("sxs");
+
+            // 2、在客户中表示联系人
+            cus.getLinkMen().add(linkMan);
+
+            // 3、保存到数据
+            session.save(cus);
+
+    2.2、级联删除
+        删除客户时，删除它的所有联系人。
+        第一步：找到客户的映射文件：在set标签上进行配置 加 cascade="delete",如果原来已经有一个，那需要 cascade="save-update,delete"
+        第二步：在代码中删除客户就行。只要删客户，可以当联系人不存在，hibernate会帮我们删。
+
+    2.3、修改：：
+        原始方法，效率低：（update会执行两次，因为两个实体都在维护外键）
+
+        // 1、查询客户对象
+        Customer cus = session.get(Customer.class, 4);
+        // 2、查询联系人对象，把此联系人的 客户ID 改为上面查询到的那个客户。
+        LinkMan linkMan = session.get(LinkMan.class, 5);
+        // 设置持久态对象
+        // 把联系人放到客户里
+        cus.getLinkMen().add(linkMan);
+        // 把客户放到联系人里
+        linkMan.setCustomer(cus);
+
+        提高性能的办法，让一方放弃对外键的维护。
+        一对多里面，可以让其中一方放弃对外键的维护。一的那方，放弃维护。
+        怎么做？
+        在映射文件的set标签上，加上 inverse="true"，表示放弃关系的维护。
+        代码还是和上面的相同，只不过效率就提高了，update只会执行一次。
+
+
+
+
+######################  Hibernate中多对多的操作：：：
+1、多对多的映射配置
+    1.1、创建两个实体类，用户和角色
+        代码参考：cn.jhsoft.study.hibernate.many2manyentiy.User 和 cn.jhsoft.study.hibernate.many2manyentiy.Role
+
+        一个用户有多个角色，使用set集合
+        在 cn.jhsoft.study.hibernate.many2manyentiy.User 中写个：并生成get,set方法
+        // 一个用户多个角色
+        private Set<Role> role = new HashSet<>();
+
+        一个角色有多个用户，使用set集合
+        在 cn.jhsoft.study.hibernate.many2manyentiy.Role 中写个：并生成get,set方法
+        // 一个角色 多个用户
+        private Set<User> user = new HashSet<>();
+
+    1.2、在映射文件中 表示出这种 多对多的关系
+
+        User.hbm.xml文件加：：
+
+        <!--在用户里面表示所有角色，使用set标签
+        name属性：角色set集合名称
+        table属性：第三张表也就是中间的关系表名称，要与Role那实体的映射文件配置的相同-->
+        <set name="role" table="user_role">
+            <!--key标签里面配置，配置当前映射文件在第三张表的外键名称-->
+            <key column="userid"></key>
+            <!--class：角色实体类全路径，column：角色在第三张表外键名称
+            这个要跟角色表那个映射文件里设置的对应起来-->
+            <many-to-many class="cn.jhsoft.study.hibernate.many2manyentiy.Role" column="roleid"></many-to-many>
+        </set>
+
+        Role.hbm.xml加：
+
+        <!--在角色里面表示所有用户，使用set标签
+        name属性：用户set集合名称
+        table属性：第三张表也就是中间的关系表名称，要与User那实体的映射文件配置的相同-->
+        <set name="user" table="user_role">
+            <!--key标签里面配置，配置当前映射文件在第三张表的外键名称-->
+            <key column="roleid"></key>
+            <!--class：用户实体类全路径，column：用户在第三张表外键名称
+            这个要跟用户表那个映射文件里设置的对应起来-->
+            <many-to-many class="cn.jhsoft.study.hibernate.many2manyentiy.User" column="userid"></many-to-many>
+        </set>
+
+
+    1.3、测试：
+        在hibernate主配置文件中，加入这两个映射文件。
+        用下面这个方法，执行了sessionFactory方法，就会自动创建表。
+        @Test
+        public void testManyToMany(){
+            Session session = HibernateUtils.getCurrentSessionObject();
+        }
+
+2、多对多级联操作（操作多个表的数据）
+    2.1、级联保存
+        在用户映射文件中，set中加入： cascade="save-update"
+
+        代码：
+        // 测试多对多，同时添加用户和角色
+        @Test
+        public void testManyToManyInsert(){
+            Transaction tx = null;
+
+            try {
+                Session session = HibernateUtils.getCurrentSessionObject();
+
+                //4、开启事务
+                tx = session.beginTransaction();
+
+                // 多对多级联保存
+                User user = new User();
+                user.setName("cy");
+                User user2 = new User();
+                user2.setName("ght");
+
+                Role role = new Role();
+                role.setName("administrator");
+                Role role2 = new Role();
+                role2.setName("admin");
+
+                user.getRole().add(role);
+                user.getRole().add(role2);
+                user2.getRole().add(role);
+                user2.getRole().add(role2);
+
+                // 保存两个用户，不用管角色，因为已经配置了set 的cascade="save-update"属性
+                session.save(user);
+                session.save(user2);
+
+                tx.commit();
+
+
+            }catch (Exception e){
+                System.out.println(e.toString());
+                tx.rollback();
+            }
+        }
+
+
+    2.2、级联删除
+        在用户映射文件中，set中加入delete： cascade="save-update,delete"
+
+        代码：
+        // 先查再删
+        User user = session.get(User.class, 1);
+        session.delete(user);
+
+    2.3、维护第三张表关系
+        2.3.1、用户和角色多对多关系，维护关系通过第三张表维护。
+
+        2.3.2、让某个用户有某个角色
+            1、根据id查询用户和角色
+            2、把角色放到用户里面
+                （1）把角色对象放到用户的set集合里。
+            代码：
+               // 让某个用户有某个角色
+               // 让ght有administrator1角色
+               // 1 查询用户和角色对象
+               User user = session.get(User.class, 2);
+               Role role = session.get(Role.class, 4);
+               // 添加操作
+               user.getRole().add(role);
+
+        2.3.2、让某个用户没有某个角色
+            1、根据id查询用户和角色
+            2、从用户里把角色去掉
+                （1）从set集合里面把角色移除(remove)。
+            代码：
+                // 让某个用户没有某个角色
+                // 让ght没有administrator1角色
+                // 1 查询用户和角色对象
+                User user = session.get(User.class, 2);
+                Role role = session.get(Role.class, 4);
+                // 移除操作
+                user.getRole().remove(role);
+
+
+Hibernate查询方式：【测试类 cn.jhsoft.study.hibernate.HibernateDemo3】
+1、对象导航
+    适合查询如某客户的所有联系人 这种场景。
+    如查客户和联系人这个一对多关系的数据，先通过客户id，查询出一个客户对象，再根据客户对象去查出他所有的联系人。
+    其实就是取他的那个Set集合即可：
+    Customer cus = session.get(Customer.class, 5);
+    for (LinkMan linkMan : cus.getLinkMen()) {
+        System.out.println(linkMan);
+    }
+
+2、OID查询
+    根据id查询某一条记录，返回对象
+    Customer cus = session.get(Customer.class, 5);
+
+3、hql查询
+    Query对象来查询，用hql语句查询
+
+    【没有查询条件】
+    "from 实体类名称"
+    代码：
+    Query query = session.createQuery("from Order");
+    List<Order> list = query.list();
+    for (Order order : list) {
+        System.out.println(order);
+    }
+
+    【有查询条件】
+    "from 实体类名称 where 实体类属性名称=? and 属性=? and 属性 like ?"
+    Query query = session.createQuery("from Order t1 where t1.id=? and t1.username=?");
+    // 如果是条件查询，还需要向?里设置值
+    // setParameter方法第一个参数是 int，代表? 的位置，位置从0开始
+    // 第二个参数，具体参数值
+    query.setParameter(0, 11);
+    query.setParameter(1, "sbsb");
+
+    【like查询】
+    Query query = session.createQuery("from Order t1 where t1.username like ?");
+    query.setParameter(0, "%sb%");
+
+    【排序】
+    "from 实体类名称 order by 实体类属性 desc/asc"
+    Query query = session.createQuery("from Order t1 where t1.username like ? order by id desc");
+
+    【分页查询】
+    在hql操作中，在语句中不能写limit，hibernate的Query对象中封装了两个方法实现分页操作。
+
+    // 设置开始的位置，相当于limit 0,10中的0
+    query.setFirstResult(0);
+    // 设置每页记录数，相当于limit 0,10中的10
+    query.setMaxResults(2);
+
+    【投影查询】
+    什么是投影查询：就是只查一个表中的部分字段的值。
+    "select 实体属性名称1，名称2 from 实体类名称"
+    注意：select 后面不能写*，要到就不写，直接写from 实体类名称
+    注意：它返回的就不是 实体了，而是 List<Object> list = query.list();
+
+    【聚集函数】
+    Query query = session.createQuery("select count(*) from Order");
+    // query对象里有方法，直接返回对象形式
+    Object obj = query.uniqueResult();
+    // 把Object转为int
+    Long lobj = (Long)obj;
+    int count = lobj.intValue();
+    System.out.println(obj+"-"+count);  // 输出 8
+
+
+
+4、QBC查询
+    Criteria对象查询，不需要写语句，传对象进去查
+
+    【查询所有记录】
+    Criteria criteria = session.createCriteria(Order.class);
+    List<Order> list = criteria.list();
+
+    【条件查询】
+    Criteria criteria = session.createCriteria(Order.class);
+    // 使用Criteria对象里的方法设置条件值
+    // 首先使用add方法，表示设置条件值
+    // 在add方法里使用类的方法来实现条件设置
+    // 类似于 id=?，第一个参数是 实体里的属性名称，第二个参数是值
+    criteria.add(Restrictions.eq("id", 17));
+    //criteria.add(Restrictions.eq("username", "cjh123"));
+    criteria.add(Restrictions.like("username", "%cjh%"));
+    //Restrictions.gt()  大于
+    //Restrictions.ge() 大于等于
+    //Restrictions.lt() 小于
+    //Restrictions.le() 小于等于
+    //Restrictions.between() 对应sql的between子句
+    //Restrictions.in() 对应sql的in子句
+    //Restrictions.or() or
+    //Restrictions.asc() 根据传入的字段升序
+    //Restrictions.desc() 根据传入的字段降序
+    List<Order> list = criteria.list();
+
+    【排序】
+    Criteria criteria = session.createCriteria(Order.class);
+    // 设置哪个字段来升序或降序排序
+    criteria.addOrder(org.hibernate.criterion.Order.desc("username"));
+    criteria.addOrder(org.hibernate.criterion.Order.asc("id"));
+    List<Order> list = criteria.list();
+
+     【分页查询】
+     // 分页,设置开始位置
+     criteria.setFirstResult(0);
+     // 设置每页记录数，与Hql相同
+     criteria.setMaxResults(2);
+
+      【统计查询】
+      Criteria criteria = session.createCriteria(Order.class);
+      // 设置统计操作
+      criteria.setProjection(Projections.rowCount());
+      //criteria.setProjection(Projections.sum("id"));
+      //criteria.setProjection(Projections.avg("id"));
+      // 调用方法得到结果
+      Object obj = criteria.uniqueResult();
+      System.out.println(obj);
+
+      【离线查询】
+      离线就是不用session也能创建对象。
+      // 离线创建对象
+      DetachedCriteria detachedCriteria = DetachedCriteria.forClass(Order.class);
+      // 执行的时候才需要session
+      Criteria criteria = detachedCriteria.getExecutableCriteria(session);
+      List<Order> list = criteria.list();
+
+      离线查询的应用场景：：
+      servlet调用service，service调用dao
+      在dao里面对数据库crud操作
+      在dao里面使用hibernate框架，使用hibernate框架时，调用session里面的方法实现功能。
+
+
+5、本地sql查询（不重要）
+    SQLQuery对象查询，使用普通sql进行查询
+
+
+################## HQL多表查询：：：
+sql语句：
+#内连接
+select a.id,a.relname,b.name from tbl_customer as a inner join tbl_linkman as b on a.id=b.cid;
+#左外连接
+select a.id,a.relname,b.name from tbl_customer as a left outer join tbl_linkman as b on a.id=b.cid;
+#右外连接
+select a.id,a.relname,b.name from tbl_customer as a right outer join tbl_linkman as b on a.id=b.cid;
+
+Hql多表查询：
+1、内连接
+    "from Customer c inner join c.linkMen"
+    代码：
+    Query query = session.createQuery("from Customer c inner join c.linkMen");
+    // 返回的list，list的每部分是数组形式。
+    List list = query.list();
+
+2、左外连接
+    "from Customer c left outer join c.linkMen"
+
+3、右外连接
+    "from Customer c right outer join c.linkMen"
+
+4、迫切内连接
+    它与内连接的区别是，内连接返回的list里每部分数组，它的list每部分是对象。
+    "from Customer c inner join fetch c.linkMen"
+    代码：
+    Query query1 = session.createQuery("from Customer c inner join fetch c.linkMen");
+    List list1 = query1.list();
+    for (Object obj:list1){
+        System.out.println(obj);
+    }
+
+5、迫切左外连接
+    "from Customer c left outer join fetch c.linkMen"
+
+Hibernate检索策略：
+1、立即查询：
+    根据id查询，调用get方法，一调用get方法，马上发送语句查询数据库
+
+2、延迟查询：
+    根据id查询，还有load方法，调用load方法不会马上发送查询数据，只得到对象里面的除了getid值时才会发送语句查询数据库。
+
+    2.1、延迟查询中又分两类：
+        2.1.1、类级别延迟：
+            根据id查询返回实体类对象，调用load方法不会马上发送语句。
+
+        2.1.2、关联级别延迟：默认是延迟的。
+            查询某个客户，再查询这个客户的所有联系人。查询客户的所有联系人的过程是否需要延迟，这个过程称为关联级别延迟。
+            比如：根据客户查询所有联系人，查询客户的过程那用的get是实时，但是取得那个联系人set集合的时候，就是延时的，如Set s = cus.getLinkMen()。
+            到用到那集合里的数据的时候，才会发sql到数据库。 如 打印 s.size();
+            【如果不想延迟：】
+            通过修改映射文件(一对多里的一，也就是客户)，在set标签上使用属性：
+            fetch="select" lazy="true"
+            两个属性：
+            fetch的值 默认就是select，
+            lazy的值默认是true延迟，false不延迟，extra是极其延迟。
+            极其延迟是，在调用 s.size() 的时候，他会发个 select count(*) xx 这个语句到数据库，并不会把此客户的联系人列表都查出来。效率更高。
+
+
+3、批量抓取：
+    用到的场景是：查询所有客户，返回list集合，想要得到每个客户的联系人，
+    要遍历list集合，得到每个客户，再得到每个客户的所有联系人。
+    问题就是，很多次sql语句，如查所有客户，再分别查每个客户的联系人，一个客户一条sql。
+
+    【优化方法：】
+    【需要用到批量抓取：】
+    通过修改映射文件(一对多里的一，也就是客户)，在set标签上使用属性：
+    batch-size="10"   值越大，发送的sql语句越少，效率越高。
+    它底层就是用到 in 。
+
+
+################## Spring整合hibernate：：：
+
+
+
+
+
+
 
 
 ################# 解决一个问题：

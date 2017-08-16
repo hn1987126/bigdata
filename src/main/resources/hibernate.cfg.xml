@@ -22,9 +22,15 @@
         在oracle数据库，实现分页用 rownum
         让hibernate框架识别不同数据库中的语句-->
         <property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+        <!--配置session绑定本地线程-->
+        <property name="hibernate.current_session_context_class">thread</property>
 
         <!--第三部分：把映射文件放到核心配置文件中 必须的-->
         <mapping resource="cn/jhsoft/study/hibernate/entity/Order.hbm.xml"></mapping>
+        <mapping resource="cn/jhsoft/study/hibernate/entity/Customer.hbm.xml"></mapping>
+        <mapping resource="cn/jhsoft/study/hibernate/entity/LinkMan.hbm.xml"></mapping>
+        <mapping resource="cn/jhsoft/study/hibernate/many2manyentiy/User.hbm.xml"></mapping>
+        <mapping resource="cn/jhsoft/study/hibernate/many2manyentiy/Role.hbm.xml"></mapping>
 
     </session-factory>
 </hibernate-configuration>

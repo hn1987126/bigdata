@@ -41,5 +41,10 @@ public class HibernateUtils {
         return transaction;
     }
 
+    // 提供返回与本地线程绑定的session 的方法
+    public static Session getCurrentSessionObject(){
+        return sessionFactory.getCurrentSession();
+    }
+
 
 }

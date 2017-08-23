@@ -17,7 +17,7 @@ import kafka.message.MessageAndMetadata;
 public class TestConsumer {
     public static void main(String[] args) {
 
-        String topic = "wifi6";
+        String topic = "wifi7";
         ConsumerConnector consumer = Consumer.createJavaConsumerConnector(createConsumerConfig());
         Map<String, Integer> topicCountMap = new HashMap<String, Integer>();
         topicCountMap.put(topic, new Integer(1));
@@ -26,20 +26,22 @@ public class TestConsumer {
         ConsumerIterator<byte[], byte[]> it = stream.iterator();
         while(it.hasNext()) {
             MessageAndMetadata<byte[], byte[]> mam = it.next();
-            String msg = new String(mam.message());
-            JSONObject jobj= JSON.parseObject(msg);
-            String mac=jobj.get("mac").toString();
-            //String cookieid = msg.split("\\|")[1];
-            int testPartition = Math.abs(mac.hashCode()) % 4;
-            // 在哪个分区上：mam.partition()
-            System.out.println("consume: Partition [" + mam.partition() + "] Message: [" + msg + "] ..");
+            if (mam != null) {
+                String msg = new String(mam.message());
+                //JSONObject jobj= JSON.parseObject(msg);
+                //String mac=jobj.get("mac").toString();
+                //String cookieid = msg.split("\\|")[1];
+                //int testPartition = Math.abs(mac.hashCode()) % 4;
+                // 在哪个分区上：mam.partition()
+                System.out.println("consume: Partition [" + mam.partition() + "] ["+msg+"]");
+            }
         }
 
     }
 
     private static ConsumerConfig createConsumerConfig() {
         Properties props = new Properties();
-        props.put("group.id","group_lxw_test");
+        props.put("group.id","group_lxw_test1");
         props.put("zookeeper.connect","116.196.88.60:2181,116.196.88.61:2181,116.196.88.62:2181");
         props.put("zookeeper.session.timeout.ms", "4000");
         props.put("zookeeper.sync.time.ms", "200");

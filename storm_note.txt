@@ -238,6 +238,8 @@ kafka-console-consumer.sh --zookeeper s2:2181 --from-beginning --topic orderMQ
 kafka-run-class.sh kafka.tools.ConsumerOffsetChecker --zookeeper s1:2181 --group orderMQ
 #查看某个Topic的详情
 kafka-topics.sh --topic orderMQ --describe --zookeeper s1:2181
+#kafka增加分区
+/root/apps/kafka/bin/kafka-topics.sh --alter --topic wifi7 --zookeeper s1:2181 --partitions 6
 
 
 ########################################################################

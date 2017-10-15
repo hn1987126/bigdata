@@ -1,0 +1,86 @@
+Netty入门教程
+第一天内容	传统IO与NIO比较
+
+
+传送IO特点
+阻塞点
+server.accept();
+inputStream.read(bytes);
+
+单线程情况下只能有一个客户端
+
+
+用线程池可以有多个客户端连接，但是非常消耗性能
+
+
+=======================分割线==========================
+
+NIO的特点
+
+ServerSocketChannel	ServerSocket
+
+SocketChannel		Socket
+
+Selector
+
+SelectionKey
+
+NIO的一些疑问
+
+1、客户端关闭的时候会抛出异常，死循环
+解决方案
+		int read = channel.read(buffer);
+		if(read > 0){
+			byte[] data = buffer.array();
+			String msg = new String(data).trim();
+			System.out.println("服务端收到信息：" + msg);
+
+			//回写数据
+			ByteBuffer outBuffer = ByteBuffer.wrap("好的".getBytes());
+			channel.write(outBuffer);// 将消息回送给客户端
+		}else{
+			System.out.println("客户端关闭");
+			key.cancel();
+		}
+
+2、selector.select();阻塞，那为什么说nio是非阻塞的IO？
+
+	selector.select()
+	selector.select(1000);不阻塞
+	selector.wakeup();也可以唤醒selector
+	selector.selectNow();也可以立马返还，视频里忘了讲了，哈，这里补上
+
+
+3、SelectionKey.OP_WRITE是代表什么意思
+OP_WRITE表示底层缓冲区是否有空间，是则响应返还true
+
+
+=======================分割线==========================
+netty版本大致版本分为  netty3.x  和  netty4.x、netty5.x
+
+netty可以运用在那些领域？
+
+1分布式进程通信
+例如: hadoop、dubbo、akka等具有分布式功能的框架，底层RPC通信都是基于netty实现的，这些框架使用的版本通常都还在用netty3.x
+
+2、游戏服务器开发
+最新的游戏服务器有部分公司可能已经开始采用netty4.x 或 netty5.x
+
+
+1、netty服务端hello world案例
+
+SimpleChannelHandler 处理消息接收和写
+{
+	messageReceived接收消息
+
+	channelConnected新连接，通常用来检测IP是否是黑名单
+
+	channelDisconnected链接关闭，可以再用户断线的时候清楚用户的缓存数据等
+}
+
+2、netty客户端hello world案例
+
+channelDisconnected与channelClosed的区别？
+
+channelDisconnected只有在连接建立后断开才会调用
+channelClosed无论连接是否成功都会调用关闭资源

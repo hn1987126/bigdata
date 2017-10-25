@@ -28,6 +28,8 @@ char、byte、int对于英文字符，可以相互转化
 14、同时定义三个变量   int a,b,c = 0;
 15、JVM执行程序的过程 ：I.加载。class文件   ，II.管理并分配内存  ，III.执行垃圾收集
 16、IO是面向流，NIO是面向缓冲。IO是阻塞式IO，NIO是非阻塞IO
+17、supervisor   Linux后台进程管理利器:supervisor    
+	重启：systemctl reload supervisord
 
 进程：正在进行中的程序
 线程：就是进程中 一个负责程序执行的控制单元（执行路径）。一个进程中至少要有一个线程，称为主线程。
